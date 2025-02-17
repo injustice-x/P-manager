@@ -1,6 +1,5 @@
 #ifndef CONTEXT_H
 #define CONTEXT_H
-
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -38,7 +37,7 @@ extern passwordManagerContext *globalContext;
 
 int passwordManagerInit(const char *dataFilePath, const char *userFilePath);
 int addPassword(userData user);
-int addUser(const char *userFilePath);
+int addUser(const char *username, const char *password);
 void passwordManagerFree(void);
 
 #endif // !CONTEXT_H
