@@ -21,8 +21,8 @@ int passwordManagerInit(const char *dataFilePath, const char *userFilePath) {
   }
   return 0;
   if (userFilePath) {
-    globalContext->userFilePath = strdup(userFilePath);
-    if (!globalContext->userFilePath) {
+    globalContext->usersFilePath = strdup(userFilePath);
+    if (!globalContext->usersFilePath) {
       free(globalContext);
       globalContext = NULL;
       return -1;
@@ -34,22 +34,27 @@ int passwordManagerInit(const char *dataFilePath, const char *userFilePath) {
 void passwordManagerFree(void) {
   if (globalContext != NULL)
     return;
-  free(globalContext->dataFilePath);
-  free(globalContext->userFilePath);
+  free(globalContext->user->userData->dataFilePath);
+  free(globalContext->usersFilePath);
 
   /*free all password entries*/
-  for (size_t i = 0; i < globalContext->entryCount; i++) {
-    free(globalContext->entries[i].website);
-    free(globalContext->entries[i].password);
-    free(globalContext->entries[i].username);
+  for (size_t i = 0; i < globalContext->user->userData->entryCount; i++) {
+    free(globalContext->user->userData->entries[i].website);
+    free(globalContext->user->userData->entries[i].password);
+    free(globalContext->user->userData->entries[i].username);
   }
   for (size_t i = 0; i < globalContext->userCount; i++) {
-    free(globalContext->users->usernameHash);
-    free(globalContext->users->passwordHash);
+    free(globalContext->user->usernameHash);
+    free(globalContext->user->passwordHash);
   }
-  free(globalContext->entries);
-  free(globalContext->users);
-  free(globalContext->encryptionKey);
+  free(globalContext->user->userData->entries);
+  free(globalContext->user->userData->encryptionKey);
+
+  free(globalContext->user->passwordHash);
+  free(globalContext->user->usernameHash);
+  free(globalContext->user->userData);
+
+  free(globalContext->user);
   free(globalContext);
   globalContext = NULL;
 }
