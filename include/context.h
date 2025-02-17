@@ -19,13 +19,13 @@ typedef struct {
   passwordEntry *entries;
   unsigned char *encryptionKey;
   size_t encryptioKeyLen;
+  bool isLoggedin;
 } userData;
 
 typedef struct {
   char *usernameHash;
   char *passwordHash;
   userData *userData;
-  bool isLoggedin;
 } userTable;
 
 typedef struct {
@@ -37,7 +37,7 @@ typedef struct {
 extern passwordManagerContext *globalContext;
 
 int passwordManagerInit(const char *dataFilePath, const char *userFilePath);
-int addPassword(const char *dataFilePath);
+int addPassword(userData user);
 int addUser(const char *userFilePath);
 void passwordManagerFree(void);
 
