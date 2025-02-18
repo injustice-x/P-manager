@@ -16,6 +16,7 @@ set(SOURCES
     ${PROJECT_SOURCE_DIR}/src/main.c
     ${PROJECT_SOURCE_DIR}/src/sha3.c
     ${PROJECT_SOURCE_DIR}/src/addUser.c
+    ${PROJECT_SOURCE_DIR}/src/context.c
 )
 
 # Add the executable target

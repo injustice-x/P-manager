@@ -1,6 +1,7 @@
 #include "../include/context.h"
 
-int addUser(const char *username, const char *password) {
+int addUser(passwordManagerContext *globalContext, const char *username,
+            const char *password) {
 
   if (globalContext == NULL) {
     fprintf(stderr, "Error: Global context is not initialized.\n");

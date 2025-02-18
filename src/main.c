@@ -8,7 +8,7 @@
 int main(int argc, char *argv[]) {
   char name[MAX_INPUT];      // Allocate buffer for the user's name
   char mPassword[MAX_INPUT]; // Allocate buffer for the master password
-
+  passwordManagerContext *globalContext;
   printf("Enter the name of the user:\n");
   if (fgets(name, sizeof(name), stdin) != NULL) {
     // Remove the trailing newline character, if present
@@ -35,7 +35,7 @@ int main(int argc, char *argv[]) {
 
   // Call addUser with the provided name and password.
   // Note: addUser should be implemented to handle these inputs appropriately.
-  if (addUser(name, mPassword) != 0) {
+  if (addUser(globalContext, name, mPassword) != 0) {
     fprintf(stderr, "Failed to add user.\n");
     return 1;
   }

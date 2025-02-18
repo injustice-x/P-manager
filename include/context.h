@@ -36,9 +36,11 @@ typedef struct {
 
 extern passwordManagerContext *globalContext;
 
-int passwordManagerInit(const char *dataFilePath, const char *userFilePath);
-int addPassword(userData user);
-int addUser(const char *username, const char *password);
-void passwordManagerFree(void);
+passwordManagerContext *passwordManagerInit(const char *dataFilePath,
+                                            const char *usersFilePath);
+int addPassword(passwordManagerContext *globalContext, userData user);
+int addUser(passwordManagerContext *globalContext, const char *username,
+            const char *password);
+void passwordManagerFree(passwordManagerContext *globalContext);
 
 #endif // !CONTEXT_H
