@@ -29,8 +29,9 @@ typedef struct {
 
 typedef struct {
   char *usersFilePath;
-  userTable *user;
+  userTable *users;
   size_t userCount;
+  userTable *currentUser;
 } passwordManagerContext;
 
 extern passwordManagerContext *globalContext;

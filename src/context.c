@@ -12,8 +12,8 @@ int passwordManagerInit(const char *dataFilePath, const char *userFilePath) {
   memset(globalContext, 0, sizeof(passwordManagerContext));
 
   if (dataFilePath) {
-    globalContext->user->userData->dataFilePath = strdup(dataFilePath);
-    if (!globalContext->user->userData->dataFilePath) {
+    globalContext->users->userData->dataFilePath = strdup(dataFilePath);
+    if (!globalContext->users->userData->dataFilePath) {
       free(globalContext);
       globalContext = NULL;
       return -1;
@@ -34,27 +34,27 @@ int passwordManagerInit(const char *dataFilePath, const char *userFilePath) {
 void passwordManagerFree(void) {
   if (globalContext != NULL)
     return;
-  free(globalContext->user->userData->dataFilePath);
+  free(globalContext->users->userData->dataFilePath);
   free(globalContext->usersFilePath);
 
   /*free all password entries*/
-  for (size_t i = 0; i < globalContext->user->userData->entryCount; i++) {
-    free(globalContext->user->userData->entries[i].website);
-    free(globalContext->user->userData->entries[i].password);
-    free(globalContext->user->userData->entries[i].username);
+  for (size_t i = 0; i < globalContext->users->userData->entryCount; i++) {
+    free(globalContext->users->userData->entries[i].website);
+    free(globalContext->users->userData->entries[i].password);
+    free(globalContext->users->userData->entries[i].username);
   }
   for (size_t i = 0; i < globalContext->userCount; i++) {
-    free(globalContext->user->usernameHash);
-    free(globalContext->user->passwordHash);
+    free(globalContext->users->usernameHash);
+    free(globalContext->users->passwordHash);
   }
-  free(globalContext->user->userData->entries);
-  free(globalContext->user->userData->encryptionKey);
+  free(globalContext->users->userData->entries);
+  free(globalContext->users->userData->encryptionKey);
 
-  free(globalContext->user->passwordHash);
-  free(globalContext->user->usernameHash);
-  free(globalContext->user->userData);
+  free(globalContext->users->passwordHash);
+  free(globalContext->users->usernameHash);
+  free(globalContext->users->userData);
 
-  free(globalContext->user);
+  free(globalContext->users);
   free(globalContext);
   globalContext = NULL;
 }
