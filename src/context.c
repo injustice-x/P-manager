@@ -1,37 +1,37 @@
 #include "../include/context.h"
+#include <string.h>
 
 passwordManagerContext *globalContext = NULL;
 
-int passwordManagerInit(const char *dataFilePath, const char *userFilePath) {
-  if (globalContext != NULL)
-    return -1;
-  globalContext = malloc(sizeof(passwordManagerContext));
-  if (!globalContext)
-    return -1;
-  /*initialize all fields to zero*/
+passwordManagerContext *passwordManagerInit(const char *dataFilePath,
+                                            const char *usersFilePath) {
+  passwordManagerContext *globalContext =
+      malloc(sizeof(passwordManagerContext));
+  if (!globalContext) {
+    return NULL;
+  }
   memset(globalContext, 0, sizeof(passwordManagerContext));
 
-  if (dataFilePath) {
-    globalContext->users->userData->dataFilePath = strdup(dataFilePath);
-    if (!globalContext->users->userData->dataFilePath) {
-      free(globalContext);
-      globalContext = NULL;
-      return -1;
-    }
-  }
-  return 0;
-  if (userFilePath) {
-    globalContext->usersFilePath = strdup(userFilePath);
+  globalContext->userCount = 0;
+  globalContext->users = NULL;
+
+  if (usersFilePath) {
+    globalContext->usersFilePath = strdup(usersFilePath);
     if (!globalContext->usersFilePath) {
+      // Cleanup if duplication fails.
+      if (globalContext->userCount > 0 && globalContext->users) {
+        free(globalContext->users[0].userData->dataFilePath);
+        free(globalContext->users[0].userData);
+        free(globalContext->users);
+      }
       free(globalContext);
-      globalContext = NULL;
-      return -1;
+      return NULL;
     }
   }
-  return 0;
+  return globalContext;
 };
 
-void passwordManagerFree(void) {
+void passwordManagerFree(passwordManagerContext *globalContext) {
   if (globalContext != NULL)
     return;
   free(globalContext->users->userData->dataFilePath);
