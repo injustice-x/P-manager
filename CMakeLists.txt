@@ -15,6 +15,7 @@ include_directories(${OPENSSL_INCLUDE_DIR})
 set(SOURCES
     ${PROJECT_SOURCE_DIR}/src/main.c
     ${PROJECT_SOURCE_DIR}/src/sha3.c
+    ${PROJECT_SOURCE_DIR}/src/addUser.c
 )
 
 # Add the executable target
