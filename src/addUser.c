@@ -1,47 +1,58 @@
 #include "../include/context.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 int addUser(passwordManagerContext *globalContext, const char *username,
             const char *password) {
 
-  if (globalContext == NULL) {
-    fprintf(stderr, "Error: Global context is not initialized.\n");
-    return -1;
-  }
-  if (username == NULL || password == NULL) {
-    fprintf(stderr, "Error: Username or password is NULL.\n");
-    return -1;
-  }
-  /*increase the user count and reallocate memory*/
-  size_t newCount = globalContext->userCount++;
-  userTable *temp = realloc(globalContext->users, newCount * sizeof(userTable));
-  if (temp == NULL) {
-    fprintf(stderr, "Error!! failed to reallocate memory");
-    return -1;
-  }
+    if (globalContext == NULL) {
+        fprintf(stderr, "Error: Global context is not initialized.\n");
+        return -1;
+    }
+    if (username == NULL || password == NULL) {
+        fprintf(stderr, "Error: Username or password is NULL.\n");
+        return -1;
+    }
 
-  globalContext->users = temp;
+    // Calculate the new count.
+    size_t newCount = globalContext->userCount + 1;
 
-  /*get the pointer to newly allocated user*/
-  userTable *newUser = &globalContext->users[newCount - 1];
-  /*save the data*/
-  newUser->usernameHash = strdup(username);
-  newUser->passwordHash = strdup(password);
+    // Reallocate memory for the users array.
+    userTable *temp = realloc(globalContext->users, newCount * sizeof(userTable));
+    if (temp == NULL) {
+        fprintf(stderr, "Error: failed to reallocate memory.\n");
+        return -1;
+    }
+    globalContext->users = temp;
 
-  if (newUser->passwordHash == NULL | newUser->usernameHash == NULL) {
-    fprintf(stderr, "failed to save data");
-    free(newUser->usernameHash);
-    free(newUser->usernameHash);
-    return -1;
-  }
+    // Get pointer to the new user slot.
+    userTable *newUser = &globalContext->users[newCount - 1];
 
-  memset(newUser->userData, 0, sizeof(userData));
+    // Save the username and password (hashes).
+    newUser->usernameHash = strdup(username);
+    newUser->passwordHash = strdup(password);
+    if (newUser->usernameHash == NULL || newUser->passwordHash == NULL) {
+        fprintf(stderr, "Error: failed to save user credentials.\n");
+        free(newUser->usernameHash);
+        free(newUser->passwordHash);
+        return -1;
+    }
 
-  /*initialize some data*/
-  newUser->userData->entryCount = 0;
-  newUser->userData->isLoggedin = false;
+    // Allocate memory for userData.
+    newUser->userData = malloc(sizeof(userData));
+    if (newUser->userData == NULL) {
+        fprintf(stderr, "Error: failed to allocate memory for userData.\n");
+        free(newUser->usernameHash);
+        free(newUser->passwordHash);
+        return -1;
+    }
+    // Initialize userData.
+    memset(newUser->userData, 0, sizeof(userData));
+    newUser->userData->entryCount = 0;
+    newUser->userData->isLoggedin = false;
 
-  /*update the global context with new user*/
-  globalContext->userCount = newCount;
-
-  return 0;
+    // Update the user count.
+    globalContext->userCount = newCount;
+    return 0;
 }
