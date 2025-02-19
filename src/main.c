@@ -9,29 +9,32 @@ int main(int argc, char *argv[]) {
   char name[MAX_INPUT];      // Allocate buffer for the user's name
   char mPassword[MAX_INPUT]; // Allocate buffer for the master password
   passwordManagerContext *globalContext;
+  globalContext = passwordManagerInit("hello", "helo");
   printf("Enter the name of the user:\n");
-  if (fgets(name, sizeof(name), stdin) != NULL) {
-    // Remove the trailing newline character, if present
-    size_t len = strlen(name);
-    if (len > 0 && name[len - 1] == '\n') {
-      name[len - 1] = '\0';
-    }
-  } else {
-    fprintf(stderr, "Error reading user name.\n");
-    return 1;
-  }
+  scanf("%s", name);
+  /*if (fgets(name, sizeof(name), stdin) != NULL) {*/
+  /*  // Remove the trailing newline character, if present*/
+  /*  size_t len = strlen(name);*/
+  /*  if (len > 0 && name[len - 1] == '\n') {*/
+  /*    name[len - 1] = '\0';*/
+  /*  }*/
+  /*} else {*/
+  /*  fprintf(stderr, "Error reading user name.\n");*/
+  /*  return 1;*/
+  /*}*/
 
   printf("Enter master password:\n");
-  if (fgets(mPassword, sizeof(mPassword), stdin) != NULL) {
-    // Remove the trailing newline character, if present
-    size_t len = strlen(mPassword);
-    if (len > 0 && mPassword[len - 1] == '\n') {
-      mPassword[len - 1] = '\0';
-    }
-  } else {
-    fprintf(stderr, "Error reading master password.\n");
-    return 1;
-  }
+  scanf("%s", mPassword);
+  /*if (fgets(mPassword, sizeof(mPassword), stdin) != NULL) {*/
+  /*  // Remove the trailing newline character, if present*/
+  /*  size_t len = strlen(mPassword);*/
+  /*  if (len > 0 && mPassword[len - 1] == '\n') {*/
+  /*    mPassword[len - 1] = '\0';*/
+  /*  }*/
+  /*} else {*/
+  /*  fprintf(stderr, "Error reading master password.\n");*/
+  /*  return 1;*/
+  /*}*/
 
   // Call addUser with the provided name and password.
   // Note: addUser should be implemented to handle these inputs appropriately.
@@ -39,6 +42,7 @@ int main(int argc, char *argv[]) {
     fprintf(stderr, "Failed to add user.\n");
     return 1;
   }
+  passwordManagerFree(globalContext);
 
   return 0;
 }
