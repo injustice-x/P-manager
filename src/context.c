@@ -18,9 +18,9 @@ passwordManagerContext *passwordManagerInit(const char *usersFilePath) {
       // Cleanup if duplication fails.
       if (globalContext->userCount > 0 && globalContext->users) {
         free(globalContext->users);
-        if (!globalContext->currentUser) {
-          free(globalContext->currentUser);
-        }
+        /*if (!globalContext->currentUser) {*/
+        /*  free(globalContext->currentUser);*/
+        /*}*/
         free(globalContext);
         return NULL;
       }
