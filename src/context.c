@@ -40,12 +40,6 @@ void passwordManagerFree(passwordManagerContext *globalContext) {
     free(globalContext->users->usernameHash);
     free(globalContext->users->passwordHash);
   }
-  free(globalContext->users->userData->entries);
-  free(globalContext->users->userData->encryptionKey);
-
-  free(globalContext->users->passwordHash);
-  free(globalContext->users->usernameHash);
-  free(globalContext->users->userData);
 
   free(globalContext->users);
   free(globalContext);
