@@ -14,7 +14,7 @@ include_directories(${OPENSSL_INCLUDE_DIR})
 # Specify the source files
 set(SOURCES
     ${PROJECT_SOURCE_DIR}/src/main.c
-    # ${PROJECT_SOURCE_DIR}/src/addUser.c
+    ${PROJECT_SOURCE_DIR}/src/addUser.c
     ${PROJECT_SOURCE_DIR}/src/context.c
     ${PROJECT_SOURCE_DIR}/src/hashIt.c
 )
