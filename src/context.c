@@ -10,14 +10,14 @@ passwordManagerContext *passwordManagerInit(const char *usersFilePath) {
   memset(globalContext, 0, sizeof(passwordManagerContext));
 
   globalContext->userCount = 0;
-  globalContext->users = NULL;
+  globalContext->currentUser = NULL;
 
   if (usersFilePath) {
     globalContext->usersFilePath = strdup(usersFilePath);
     if (!globalContext->usersFilePath) {
       // Cleanup if duplication fails.
-      if (globalContext->userCount > 0 && globalContext->users) {
-        free(globalContext->users);
+      if (globalContext->userCount > 0 && globalContext->usersFilePath) {
+        free(globalContext->currentUser);
         /*if (!globalContext->currentUser) {*/
         /*  free(globalContext->currentUser);*/
         /*}*/
@@ -32,16 +32,16 @@ passwordManagerContext *passwordManagerInit(const char *usersFilePath) {
 void passwordManagerFree(passwordManagerContext *globalContext) {
   if (globalContext != NULL)
     return;
-  free(globalContext->users->userData->dataFilePath);
+  free(globalContext->currentUser->userData->dataFilePath);
   free(globalContext->usersFilePath);
 
   /*free all password entries*/
   for (size_t i = 0; i < globalContext->userCount; i++) {
-    free(globalContext->users->usernameHash);
-    free(globalContext->users->passwordHash);
+    free(globalContext->currentUser->usernameHash);
+    free(globalContext->currentUser->passwordHash);
   }
 
-  free(globalContext->users);
+  free(globalContext->currentUser);
   free(globalContext);
   globalContext = NULL;
   return;
@@ -49,7 +49,8 @@ void passwordManagerFree(passwordManagerContext *globalContext) {
 
 void currentUserFree(userTable *currentUser) {
 
-  for (size_t i = 0; i < globalContext->users->userData->entryCount; i++) {
+  for (size_t i = 0; i < globalContext->currentUser->userData->entryCount;
+       i++) {
     free(currentUser->userData->entries[i].website);
     free(currentUser->userData->entries[i].password);
     free(currentUser->userData->entries[i].username);

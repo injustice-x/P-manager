@@ -1,5 +1,6 @@
 #ifndef CONTEXT_H
 #define CONTEXT_H
+
 #include <fcntl.h> // for open flags
 #include <stdbool.h>
 #include <stddef.h>
@@ -48,7 +49,6 @@ void currentUserFree(userTable *currentUser);
 userTable *authUser(passwordManagerContext *globalContext);
 unsigned char *hashIt(const char *password, unsigned int *digest_len);
 int addUser(userTable *currentUser, const char *username, const char *password);
-
 int addPassword(userTable *currentUser, userData user);
 
-#endif // !CONTEXT_H
+#endif // CONTEXT_H
