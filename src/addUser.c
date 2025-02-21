@@ -5,6 +5,10 @@
 
 int addUser(userTable *currentUser, const char *username,
             const char *password) {
+  unsigned int *passHashLen;
+  unsigned int *userHashLen;
+  unsigned char *passwordHash = hashIt(password, passHashLen);
+  unsigned char *usernameHash = hashIt(username, userHashLen);
 
   if (globalContext == NULL) {
     fprintf(stderr, "Error: Global context is not initialized.\n");
@@ -30,8 +34,9 @@ int addUser(userTable *currentUser, const char *username,
   userTable *newUser = &globalContext->users[newCount - 1];
 
   // Save the username and password (hashes).
-  newUser->usernameHash = strdup(username);
-  newUser->passwordHash = strdup(password);
+  newUser->usernameHash = strdup((const char *)usernameHash);
+  newUser->passwordHash = strdup((const char *)passwordHash);
+
   if (newUser->usernameHash == NULL || newUser->passwordHash == NULL) {
     fprintf(stderr, "Error: failed to save user credentials.\n");
     free(newUser->usernameHash);
