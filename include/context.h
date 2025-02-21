@@ -37,8 +37,13 @@ typedef struct {
 extern passwordManagerContext *globalContext;
 
 passwordManagerContext *passwordManagerInit(const char *usersFilePath);
-int addPassword(userTable *currentUser, userData user);
-int addUser(userTable *currentUser, const char *username, const char *password);
 void passwordManagerFree(passwordManagerContext *globalContext);
+userTable *getUserContext(const char *usersFilePath);
 void currentUserFree(userTable *currentUser);
+
+int addUser(userTable *currentUser, const char *username, const char *password);
+unsigned char *hashIt(const char *password, unsigned int *digest_len);
+
+int addPassword(userTable *currentUser, userData user);
+
 #endif // !CONTEXT_H
