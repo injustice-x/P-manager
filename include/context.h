@@ -1,54 +1,41 @@
 #ifndef CONTEXT_H
 #define CONTEXT_H
-#include <fcntl.h> // for open flags
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/stat.h> // for mode constants
-#include <unistd.h>   // for close()
 
+#include <cstddef>
+#include <stddef.h>
 typedef struct {
   char *website;
   char *username;
   char *password;
-} passwordEntry;
-
-typedef struct {
-  char *dataFilePath;
-  size_t entryCount;
-  passwordEntry *entries;
-  unsigned char *encryptionKey;
-  size_t encryptioKeyLen;
-  bool isLoggedin;
-} userData;
+} entry;
 
 typedef struct {
   char *usernameHash;
   char *passwordHash;
-  userData *userData;
-} userTable;
+  char *dataFilePathHash;
+} user;
+
+typedef struct {
+  user *thisUser;
+  char *dataFilePath;
+  size_t *entryCount;
+  entry *entries;
+  unsigned char *encryptionKey;
+  size_t *encryptionKeyLen;
+} userContext;
 
 typedef struct {
   char *usersFilePath;
+  user *users;
+  userContext *currentUser;
   size_t userCount;
-  userTable *currentUser;
 } passwordManagerContext;
 
 extern passwordManagerContext *globalContext;
+extern userContext *currentUser;
 
-char *readFile(const char *filename);
-int writeFile(const char *filename, const char *content);
-passwordManagerContext *passwordManagerInit(const char *usersFilePath);
-void passwordManagerFree(passwordManagerContext *globalContext);
-userTable *getUserContext(const char *usersFilePath);
-void currentUserFree(userTable *currentUser);
+passwordManagerContext *initPasswordManagerContext(const char *usersFilePath);
 
-userTable *authUser(passwordManagerContext *globalContext);
 unsigned char *hashIt(const char *password, unsigned int *digest_len);
-int addUser(userTable *currentUser, const char *username, const char *password);
-
-int addPassword(userTable *currentUser, userData user);
 
 #endif // !CONTEXT_H
