@@ -45,3 +45,11 @@ void freeGlobalContext(passwordManagerContext *globalContext) {
   free(globalContext->usersFilePath);
   free(globalContext);
 }
+void freeUserContext(passwordManagerContext *globalContext) {
+  free(globalContext->currentUser->encryptionKey);
+  free(globalContext->currentUser->thisUser);
+  free(globalContext->currentUser->dataFilePath);
+  free(globalContext->currentUser->entries);
+  free(globalContext->currentUser->entryCount);
+  free(globalContext->currentUser);
+}
