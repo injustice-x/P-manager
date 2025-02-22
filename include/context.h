@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <stddef.h>
+
 typedef struct {
   char *website;
   char *username;
@@ -34,8 +35,20 @@ typedef struct {
 extern passwordManagerContext *globalContext;
 extern userContext *currentUser;
 
+/*main functions*/
 passwordManagerContext *initPasswordManagerContext(const char *usersFilePath);
+userContext *auth(user *users, size_t userCount);
+int addUser(passwordManagerContext *globalcontext);
+int removeUser(passwordManagerContext *globalcontext);
+int addPassword(userContext *currentuser);
+int editPassword(userContext *currentuser);
+void freeUserContext(userContext *currentUser);
+void freeGlobalContext(passwordManagerContext *globalContext);
 
-unsigned char *hashIt(const char *password, unsigned int *digest_len);
+/*helper functions*/
+unsigned char *hashIt(const char *input, unsigned int *digest_len);
+unsigned char *jsonIt(entry *entries);
+unsigned char *jsonThis(user *users);
+int *encryptIt(const char *dataFilePath, entry *entries);
 
 #endif // !CONTEXT_H
