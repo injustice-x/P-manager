@@ -1,6 +1,7 @@
 #ifndef CONTEXT_H
 #define CONTEXT_H
 
+#include <cjson/cJSON.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,7 +22,7 @@ typedef struct {
 typedef struct {
   user *thisUser;
   char *dataFilePath;
-  size_t *entryCount;
+  size_t entryCount;
   entry *entries;
   unsigned char *encryptionKey;
   size_t *encryptionKeyLen;
@@ -52,7 +53,7 @@ void freeGlobalContext(passwordManagerContext *globalContext);
 unsigned char *hashIt(const char *input, unsigned int *digest_len);
 unsigned char *readFile(const char *filePath);
 int writeFile(const char *filePath, unsigned char *jsonString);
-unsigned char *jsonEntries(entry *entries);
+char *jsonEntries(entry *entries, char *name, size_t entryCount);
 entry *unJsonEntries(unsigned char *jsonEntries);
 unsigned char *jsonUsers(user *users);
 user *unJsonUsers(unsigned char *usersJson);
