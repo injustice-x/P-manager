@@ -1,5 +1,6 @@
 #include "../include/context.h"
 #include <stddef.h>
+#include <stdlib.h>
 
 passwordManagerContext *initPasswordManagerContext(const char *usersFilePath) {
   passwordManagerContext *globalConetxt;
@@ -36,4 +37,11 @@ passwordManagerContext *initPasswordManagerContext(const char *usersFilePath) {
     return NULL;
   };
   return globalConetxt;
+}
+
+void freeGlobalContext(passwordManagerContext *globalContext) {
+  free(globalContext->users);
+  free(globalContext->currentUser);
+  free(globalContext->usersFilePath);
+  free(globalContext);
 }
