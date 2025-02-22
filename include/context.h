@@ -39,13 +39,13 @@ extern userContext *currentUser;
 
 /*main functions*/
 passwordManagerContext *initPasswordManagerContext(const char *usersFilePath);
-userContext *signUp(user *users, size_t userCount);
-userContext *logIn(user *users, size_t userCount);
-int addUser(passwordManagerContext *globalcontext);
-int removeUser(passwordManagerContext *globalcontext);
-int addPassword(userContext *currentuser);
-int editPassword(userContext *currentuser);
-void freeUserContext(userContext *currentUser);
+userContext *signUp(passwordManagerContext *globalContext);
+userContext *logIn(passwordManagerContext *globalContext);
+int addUser(passwordManagerContext *globalContext);
+int removeUser(passwordManagerContext *globalContext);
+int addPassword(passwordManagerContext *globalContext);
+int editPassword(passwordManagerContext *globalContext);
+void freeUserContext(passwordManagerContext *globalContext);
 void freeGlobalContext(passwordManagerContext *globalContext);
 
 /*helper functions*/
@@ -57,5 +57,6 @@ entry *unJsonEntries(unsigned char *jsonEntries);
 unsigned char *jsonUsers(user *users);
 user *unJsonUsers(unsigned char *usersJson);
 int *encryptData(const char *dataFilePath, entry *entries);
+int *decryptData(const char *dataFilePath, entry *entries);
 
 #endif // !CONTEXT_H
