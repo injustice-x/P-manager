@@ -14,10 +14,12 @@ int main(int argc, char *argv[]) {
 
     switch (choice) {
     case 1:
-      signUp(globalContext->users, globalContext->userCount);
+      globalContext->currentUser =
+          signUp(globalContext->users, globalContext->userCount);
       break;
     case 2:
-      logIn(globalContext->users, globalContext->userCount);
+      globalContext->currentUser =
+          logIn(globalContext->users, globalContext->userCount);
       break;
     case 3:
       exit(0);
