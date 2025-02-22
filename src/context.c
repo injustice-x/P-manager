@@ -17,7 +17,7 @@ passwordManagerContext *initPasswordManagerContext(const char *usersFilePath) {
     globalConetxt->currentUser = malloc(sizeof(userContext));
   } else {
     user *users;
-    users = unJsonThis(usersJason);
+    users = unJsonUsers(usersJason);
     size_t userCount;
 
     globalConetxt->users = users;
@@ -37,4 +37,3 @@ passwordManagerContext *initPasswordManagerContext(const char *usersFilePath) {
   };
   return globalConetxt;
 }
-
