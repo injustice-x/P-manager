@@ -9,7 +9,7 @@ passwordManagerContext *initPasswordManagerContext(const char *usersFilePath) {
     return NULL;
   }
   unsigned char *usersJason;
-  usersJason = readFile(usersFilePath);
+  /*usersJason = readFile(usersFilePath);*/
   if (usersJason == NULL) {
 
     globalConetxt->users = malloc(sizeof(user));
@@ -50,6 +50,5 @@ void freeUserContext(passwordManagerContext *globalContext) {
   free(globalContext->currentUser->thisUser);
   free(globalContext->currentUser->dataFilePath);
   free(globalContext->currentUser->entries);
-  free(globalContext->currentUser->entryCount);
   free(globalContext->currentUser);
 }

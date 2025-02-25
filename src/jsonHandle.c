@@ -9,11 +9,13 @@ char *jsonEntries(entry *entries, char *name, size_t entryCount) {
   cJSON *entriesTemp = NULL;
   cJSON *jsonEntry = cJSON_CreateObject();
 
-  if (cJSON_AddStringToObject(jsonEntry, "username", name)) {
+  if (cJSON_AddStringToObject(jsonEntry, "username", name) == NULL) {
+    printf("1\n");
     return NULL;
   }
   entriesTemp = cJSON_AddArrayToObject(jsonEntry, "Entries");
   if (entriesTemp == NULL) {
+    printf("2\n");
     return NULL;
   }
 
@@ -30,6 +32,7 @@ char *jsonEntries(entry *entries, char *name, size_t entryCount) {
         NULL) {
       return NULL;
     }
+    printf("3\n");
     cJSON_AddItemToArray(entriesTemp, entry);
   }
   jsonString = cJSON_Print(jsonEntry);
