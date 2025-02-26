@@ -4,7 +4,7 @@
 int main(int argc, char *argv[]) {
   entry *test;
   test = malloc(sizeof(entry));
-  test->username = "username";
+  test->username = "ahsifsda";
   test->password = "password";
   test->website = "website";
 
