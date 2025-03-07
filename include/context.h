@@ -52,9 +52,9 @@ void freeGlobalContext(passwordManagerContext *globalContext);
 /*helper functions*/
 unsigned char *hashIt(const char *input, unsigned int *digest_len);
 unsigned char *readFile(const char *filePath);
-int writeFile(const char *filePath, unsigned char *jsonString);
+int writeFile(const char *filePath, char *jsonString);
 char *jsonEntries(entry *entries, char *name, size_t entryCount);
-entry *unJsonEntries(unsigned char *jsonEntries);
+entry *unJsonEntries(char *jsonEntries);
 unsigned char *jsonUsers(user *users);
 user *unJsonUsers(unsigned char *usersJson);
 int *encryptData(const char *dataFilePath, entry *entries);
