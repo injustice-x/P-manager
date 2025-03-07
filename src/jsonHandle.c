@@ -1,7 +1,25 @@
 #include "../include/context.h"
 #include <cjson/cJSON.h>
 #include <stddef.h>
+#include <stdio.h>
+#include <string.h>
 #include <strings.h>
+
+entry *unJsonEntries(char *jsonEntries) {
+  entry *jEntry;
+  cJSON *jString = cJSON_Parse(jsonEntries);
+
+  if (jString == NULL) {
+    const char *errPtr = cJSON_GetErrorPtr();
+
+    if (errPtr == NULL) {
+      printf("error 5;\n");
+      return NULL;
+    }
+    cJSON_Delete(jString);
+  }
+  return jEntry;
+}
 
 char *jsonEntries(entry *entries, char *name, size_t entryCount) {
 
