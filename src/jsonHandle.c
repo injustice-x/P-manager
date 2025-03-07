@@ -18,7 +18,7 @@ entry *unJsonEntries(char *jsonEntries) {
     }
     cJSON_Delete(jString);
   }
-  return jEntry;
+  cJSON *jData = return jEntry;
 }
 
 char *jsonEntries(entry *entries, char *name, size_t entryCount) {
