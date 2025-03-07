@@ -11,7 +11,7 @@ unsigned char *readFile(const char *filePath) {
   return returnString;
 }
 
-int writeFile(const char *filePath, unsigned char *jsonString) {
+int writeFile(const char *filePath, char *jsonString) {
   FILE *f = fopen(filePath, "w");
   return 0;
 }
