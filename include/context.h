@@ -8,6 +8,7 @@
 #include <string.h>
 
 typedef struct {
+  char *name;
   char *website;
   char *username;
   char *password;
