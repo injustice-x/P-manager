@@ -18,7 +18,13 @@ entry *unJsonEntries(char *jsonEntries) {
     }
     cJSON_Delete(jString);
   }
-  cJSON *jData = return jEntry;
+  cJSON *jData = cJSON_GetObjectItemCaseSensitive(jString, "Entries");
+  if (!cJSON_IsArray(jData)) {
+    fprintf(stderr, "\"Entries is not an array \n");
+    cJSON_Delete(jData);
+    return NULL;
+  }
+  return jEntry;
 }
 
 char *jsonEntries(entry *entries, char *name, size_t entryCount) {
@@ -40,6 +46,9 @@ char *jsonEntries(entry *entries, char *name, size_t entryCount) {
   for (size_t i = 0; i < entryCount; ++i) {
     cJSON *entry = cJSON_CreateObject();
     if (cJSON_AddStringToObject(entry, "website", entries[i].website) == NULL) {
+      return NULL;
+    }
+    if (cJSON_AddStringToObject(entry, "name", entries[i].name) == NULL) {
       return NULL;
     }
     if (cJSON_AddStringToObject(entry, "username", entries[i].username) ==
