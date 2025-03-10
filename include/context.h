@@ -28,7 +28,7 @@ typedef struct {
 } user;
 
 typedef struct {
-  char *filePath;
+  const char *filePath;
   user *currentUser;
 } passwordManagerContext;
 
@@ -41,7 +41,6 @@ userContext *logIn(passwordManagerContext *globalContext);
 int addUser(passwordManagerContext *globalContext);
 int addPassword(passwordManagerContext *globalContext);
 int editPassword(passwordManagerContext *globalContext);
-void freeUserContext(passwordManagerContext *globalContext);
 void freeGlobalContext(passwordManagerContext *globalContext);
 
 /*helper functions*/
