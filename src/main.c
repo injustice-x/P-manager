@@ -1,5 +1,6 @@
 #include "../include/context.h"
 #include <stdio.h>
+#include <unistd.h>
 
 int main(int argc, char *argv[]) {
   int opt;
@@ -14,12 +15,15 @@ int main(int argc, char *argv[]) {
       return 1;
     }
   }
-  if (access(dataFilePath, F_OK) == 0) {
-    printf("file exists\n");
-    // file exists
-  } else {
+  if (access(dataFilePath, F_OK) != 0) {
     printf("file doesnt exists\n");
+    FILE *fptr;
+    fptr = fopen(dataFilePath, "w");
+    fclose(fptr);
   }
+
+  readFile(dataFilePath);
+
   passwordManagerContext *globalContext =
       initPasswordManagerContext(dataFilePath);
 

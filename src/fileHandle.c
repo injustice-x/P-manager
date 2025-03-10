@@ -1,7 +1,7 @@
 #include "../include/context.h"
 
-unsigned char *readFile(const char *filePath) {
-  unsigned char *returnString;
+char *readFile(const char *filePath) {
+  char *returnString;
   FILE *f = fopen(filePath, "r");
   if (f == NULL) {
     perror("error in opening file");
