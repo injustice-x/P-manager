@@ -10,6 +10,8 @@ userContext *signUp(passwordManagerContext *globalContext) {
   scanf("%s", username);
   printf("Enter password:");
   scanf("%s", password);
+  globalContext->currentUser = newUser;
+  addUser(globalContext);
 
   return newUser;
 };
