@@ -2,7 +2,7 @@
 #include <openssl/evp.h>
 #define DIGEST_SIZE 32 // SHA3-256 produces 32 bytes
 
-unsigned char *hashIt(const char *password, unsigned int *digest_len) {
+unsigned char *hashIt(const char *input, unsigned int *digest_len) {
   unsigned char *digest = malloc(DIGEST_SIZE);
   if (!digest) {
     fprintf(stderr, "Memory allocation error\n");
@@ -24,8 +24,8 @@ unsigned char *hashIt(const char *password, unsigned int *digest_len) {
     return NULL;
   }
 
-  // Update with the password data
-  if (EVP_DigestUpdate(ctx, password, strlen(password)) != 1) {
+  // Update with the input data
+  if (EVP_DigestUpdate(ctx, input, strlen(input)) != 1) {
     fprintf(stderr, "Digest update error\n");
     EVP_MD_CTX_free(ctx);
     free(digest);
