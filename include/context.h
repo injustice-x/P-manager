@@ -55,7 +55,7 @@ unsigned char *hashIt(const char *input, unsigned int *digest_len);
 unsigned char *readFile(const char *filePath);
 int writeFile(const char *filePath, char *jsonString);
 char *jsonEntries(entry *entries, char *name, size_t entryCount);
-entry *unJsonEntries(char *jsonEntries);
+entry *unJsonEntries(char *jsonString, int *numEntries);
 unsigned char *jsonUsers(user *users);
 user *unJsonUsers(unsigned char *usersJson);
 int *encryptData(const char *dataFilePath, entry *entries);
