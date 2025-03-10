@@ -1,11 +1,11 @@
 #include "../include/context.h"
+#include <stdio.h>
 
 passwordManagerContext *initPasswordManagerContext(const char *dataFilePath) {
 
   if (dataFilePath == NULL) {
     return NULL;
   }
-
   passwordManagerContext *globalContext;
   globalContext = malloc(sizeof(passwordManagerContext));
 
