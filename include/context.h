@@ -15,14 +15,6 @@ typedef struct {
 } entry;
 
 typedef struct {
-  char *usernameHash;
-  char *passwordHash;
-  char *dataFilePathHash;
-} user;
-
-typedef struct {
-  user *thisUser;
-  char *dataFilePath;
   size_t entryCount;
   entry *entries;
   unsigned char *encryptionKey;
@@ -30,21 +22,23 @@ typedef struct {
 } userContext;
 
 typedef struct {
-  char *usersFilePath;
-  user *users;
-  userContext *currentUser;
-  size_t userCount;
+  char *usernameHash;
+  char *passwordHash;
+  userContext *currentContext;
+} user;
+
+typedef struct {
+  char *filePath;
+  user *currentUser;
 } passwordManagerContext;
 
 extern passwordManagerContext *globalContext;
-extern userContext *currentUser;
+extern user *currentUser;
 
 /*main functions*/
 passwordManagerContext *initPasswordManagerContext(const char *usersFilePath);
-userContext *signUp(passwordManagerContext *globalContext);
 userContext *logIn(passwordManagerContext *globalContext);
 int addUser(passwordManagerContext *globalContext);
-int removeUser(passwordManagerContext *globalContext);
 int addPassword(passwordManagerContext *globalContext);
 int editPassword(passwordManagerContext *globalContext);
 void freeUserContext(passwordManagerContext *globalContext);
@@ -56,8 +50,6 @@ unsigned char *readFile(const char *filePath);
 int writeFile(const char *filePath, char *jsonString);
 char *jsonEntries(entry *entries, char *name, size_t entryCount);
 entry *unJsonEntries(char *jsonString, int *numEntries);
-unsigned char *jsonUsers(user *users);
-user *unJsonUsers(unsigned char *usersJson);
 int *encryptData(const char *dataFilePath, entry *entries);
 int *decryptData(const char *dataFilePath, entry *entries);
 
