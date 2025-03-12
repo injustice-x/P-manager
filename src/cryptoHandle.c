@@ -2,7 +2,7 @@
 #include <openssl/evp.h>
 #define DIGEST_SIZE 32 // SHA3-256 produces 32 bytes
 
-unsigned char *hashIt(const char *input, unsigned int *digest_len) {
+unsigned char *hashIt(char *input, unsigned int *digest_len) {
   unsigned char *digest = malloc(DIGEST_SIZE);
   if (!digest) {
     fprintf(stderr, "Memory allocation error\n");
