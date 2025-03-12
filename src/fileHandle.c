@@ -2,6 +2,7 @@
 #include <stdio.h>
 
 /*char *readFile(const char *filePath) {*/
+
 /*  char *returnString;*/
 /*  FILE *f = fopen(filePath, "r");*/
 /*  if (f == NULL) {*/
