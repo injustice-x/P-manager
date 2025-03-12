@@ -42,8 +42,8 @@ extern user *currentUser;
 
 /*main functions*/
 passwordManagerContext *initPasswordManagerContext(const char *dataFilePath);
-userContext *logIn(passwordManagerContext *globalContext);
-user getUser(passwordManagerContext *globalContext);
+int logIn(passwordManagerContext *globalContext);
+user *getUser(passwordManagerContext *globalContext);
 int addUser(passwordManagerContext *globalContext);
 int addPassword(passwordManagerContext *globalContext);
 int editPassword(passwordManagerContext *globalContext);
