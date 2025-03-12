@@ -27,7 +27,9 @@ passwordManagerContext *initPasswordManagerContext(const char *dataFilePath) {
 
 void freeGlobalContext(passwordManagerContext *globalContext) {
   free(globalContext->currentUser->currentContext);
-  free(globalContext->currentUser->hash);
+
+  free(globalContext->currentUser->hash->passwordHash);
+  free(globalContext->currentUser->hash->usernameHash);
 
   free(globalContext->currentUser);
   free(globalContext);

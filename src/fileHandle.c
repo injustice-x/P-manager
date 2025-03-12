@@ -1,17 +1,10 @@
 #include "../include/context.h"
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-/*char *readFile(const char *filePath) {*/
+#define MAX_LINE_LENGTH 1024
 
-/*  char *returnString;*/
-/*  FILE *f = fopen(filePath, "r");*/
-/*  if (f == NULL) {*/
-/*    perror("error in opening file");*/
-/*    return EXIT_FAILURE;*/
-/*  }*/
-/**/
-/*  return returnString;*/
-/*}*/
 int writeHashes(hashes *hash, const char *dataFilePath) {
   FILE *f = fopen(dataFilePath, "w");
   if (f == NULL) {
@@ -52,4 +45,55 @@ int writeHashes(hashes *hash, const char *dataFilePath) {
   return 0;
 }
 
-hashes *getHashes(const char *dataFilePath);
+hashes *getHashes(const char *dataFilePath) {
+  FILE *f = fopen(dataFilePath, "r");
+  if (f == NULL) {
+    perror("Error Opening File!!");
+    return NULL;
+  }
+
+  hashes *result = malloc(sizeof(hashes));
+  if (result == NULL) {
+    perror("error allocating memory!!");
+    fclose(f);
+    return NULL;
+  }
+  result->usernameHash = NULL;
+  result->passwordHash = NULL;
+
+  char buffer[MAX_LINE_LENGTH];
+
+  if (fgets(buffer, MAX_LINE_LENGTH, f) != NULL) {
+    buffer[strcspn(buffer, "\n")] = '\0';
+    result->usernameHash = (unsigned char *)strdup(buffer);
+    if (result->usernameHash == NULL) {
+      perror("memory allocation failed for usernameHash");
+      fclose(f);
+      free(result);
+      return NULL;
+    }
+  } else {
+    // First line not found.
+    fclose(f);
+    free(result);
+    return NULL;
+  }
+
+  if (fgets(buffer, MAX_LINE_LENGTH, f) != NULL) {
+    buffer[strcspn(buffer, "\n")] = '\0';
+    result->passwordHash = (unsigned char *)strdup(buffer);
+    if (result->passwordHash == NULL) {
+      perror("memory allocation failed for usernameHash");
+      fclose(f);
+      free(result);
+      return NULL;
+    }
+  } else {
+    // First line not found.
+    fclose(f);
+    free(result);
+    return NULL;
+  }
+  fclose(f);
+  return result;
+}
