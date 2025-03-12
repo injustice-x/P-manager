@@ -1,6 +1,5 @@
 #include "../include/context.h"
-#include <stdio.h>
-#include <unistd.h>
+#include <string.h>
 #define MAX_SIZE 50
 
 int main(int argc, char *argv[]) {
@@ -45,13 +44,15 @@ int main(int argc, char *argv[]) {
     free(filePath);
     exit(EXIT_FAILURE);
   }
-
   // Check if the file exists. If it doesn't, call addUser.
   if (access(dataFilePath, F_OK) != 0) {
     printf("File doesn't exist\n");
     if (addUser(globalContext) != 0) {
       fprintf(stderr, "Error adding user\n");
     }
+  } else {
+    hashes *hash;
+    globalContext->currentUser = getUser(globalContext);
   }
 
   // Clean up
