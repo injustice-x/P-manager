@@ -23,6 +23,11 @@ typedef struct {
 } userContext;
 
 typedef struct {
+  unsigned char *usernameHash;
+  unsigned char *passwordHash;
+} hashes;
+
+typedef struct {
   char *usernameHash;
   char *passwordHash;
   userContext *currentContext;
@@ -37,7 +42,7 @@ extern passwordManagerContext *globalContext;
 extern user *currentUser;
 
 /*main functions*/
-passwordManagerContext *initPasswordManagerContext(const char *usersFilePath);
+passwordManagerContext *initPasswordManagerContext(const char *dataFilePath);
 userContext *logIn(passwordManagerContext *globalContext);
 int addUser(passwordManagerContext *globalContext);
 int addPassword(passwordManagerContext *globalContext);
@@ -46,8 +51,10 @@ void freeGlobalContext(passwordManagerContext *globalContext);
 
 /*helper functions*/
 unsigned char *hashIt(const char *input, unsigned int *digest_len);
-char *readFile(const char *filePath);
-int writeFile(const char *filePath, char *jsonString);
+hashes *getHashes(const char *dataFilePath);
+int *writeHashes(hashes hash, const char *dataFilePath);
+int *writeData(unsigned char *encrypted, const char *dataFilePath);
+unsigned char *getData(const char *dataFilePath);
 char *jsonEntries(entry *entries, char *name, size_t entryCount);
 entry *unJsonEntries(char *jsonString, int *numEntries);
 int *encryptData(const char *dataFilePath, entry *entries);
