@@ -5,7 +5,7 @@
 
 int main(int argc, char *argv[]) {
   entry *testJson;
-  size_t count = 2;
+  size_t count = 0;
   int numEntries = 2;
   testJson = malloc(sizeof(entry) * count);
   testJson[1].name = "name1";
