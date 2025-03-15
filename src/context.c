@@ -1,4 +1,5 @@
 #include "../include/context.h"
+#include <stdlib.h>
 
 passwordManagerContext *initPasswordManagerContext(const char *dataFilePath) {
 
@@ -15,6 +16,7 @@ passwordManagerContext *initPasswordManagerContext(const char *dataFilePath) {
   globalContext->filePath = dataFilePath;
   globalContext->currentUser = malloc(sizeof(user));
   globalContext->currentUser->hash = malloc(sizeof(hashes));
+  globalContext->currentUser->currentContext = malloc(sizeof(userContext));
 
   if (globalContext->currentUser == NULL) {
     free(globalContext->currentUser);
