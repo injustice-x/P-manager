@@ -1,4 +1,5 @@
 #include "../include/context.h"
+#include <stdio.h>
 #include <string.h>
 #define MAX_SIZE 50
 
@@ -52,7 +53,10 @@ int main(int argc, char *argv[]) {
     }
   } else {
     hashes *hash;
-    globalContext->currentUser = getUser(globalContext);
+    if (getUser(globalContext) == 1) {
+      printf("Couldnt get User from File");
+      return 0;
+    }
   }
 
   // Clean up
