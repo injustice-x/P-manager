@@ -16,7 +16,7 @@ typedef struct {
 } entry;
 
 typedef struct {
-  size_t entryCount;
+  int entryCount;
   entry *entries;
   unsigned char *encryptionKey;
   size_t *encryptionKeyLen;
@@ -43,7 +43,7 @@ extern user *currentUser;
 /*main functions*/
 passwordManagerContext *initPasswordManagerContext(const char *dataFilePath);
 int logIn(passwordManagerContext *globalContext);
-user *getUser(passwordManagerContext *globalContext);
+int getUser(passwordManagerContext *globalContext);
 int addUser(passwordManagerContext *globalContext);
 int addPassword(passwordManagerContext *globalContext);
 int editPassword(passwordManagerContext *globalContext);
