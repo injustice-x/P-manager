@@ -71,7 +71,6 @@ char *jsonEntries(entry *entries, char *name, size_t entryCount) {
   char *jsonString;
   cJSON *entriesTemp = NULL;
   cJSON *jsonEntry = cJSON_CreateObject();
-
   if (cJSON_AddStringToObject(jsonEntry, "username", name) == NULL) {
     printf("1\n");
     return NULL;
@@ -82,6 +81,11 @@ char *jsonEntries(entry *entries, char *name, size_t entryCount) {
     return NULL;
   }
 
+  if (entryCount == 0) {
+    jsonString = cJSON_Print(jsonEntry);
+
+    return jsonString;
+  }
   for (size_t i = 0; i < entryCount; ++i) {
     cJSON *entry = cJSON_CreateObject();
     if (cJSON_AddStringToObject(entry, "website", entries[i].website) == NULL) {
