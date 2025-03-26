@@ -1,5 +1,7 @@
 #include "../include/context.h"
+#include <openssl/err.h>
 #include <openssl/evp.h>
+
 #define DIGEST_SIZE 32 // SHA3-256 produces 32 bytes
 
 unsigned char *hashIt(char *input, unsigned int *digest_len) {
@@ -42,4 +44,32 @@ unsigned char *hashIt(char *input, unsigned int *digest_len) {
 
   EVP_MD_CTX_free(ctx);
   return digest;
+}
+
+unsigned char *deriveAesKey(unsigned char *master_hash, size_t hash_len,
+                            char *user_salt) {
+  // Internal fixed parameters
+  const int iterations =
+      10000;                 // Adjust for desired security/performance balance
+  const int key_length = 32; // 32 bytes for AES-256
+
+  // Allocate memory for the derived key
+  unsigned char *aes_key = malloc(key_length);
+  if (aes_key == NULL) {
+    fprintf(stderr, "Memory allocation failed.\n");
+    return NULL;
+  }
+
+  // Derive the key using PBKDF2-HMAC-SHA256.
+  // The function uses the master_hash as the "password" and user_salt as the
+  // salt.
+  if (!PKCS5_PBKDF2_HMAC((const char *)master_hash, hash_len,
+                         (const unsigned char *)user_salt, strlen(user_salt),
+                         iterations, EVP_sha256(), key_length, aes_key)) {
+    fprintf(stderr, "Key derivation failed.\n");
+    free(aes_key);
+    return NULL;
+  }
+
+  return aes_key;
 }
