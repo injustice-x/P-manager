@@ -32,6 +32,7 @@ void freeGlobalContext(passwordManagerContext *globalContext) {
 
   free(globalContext->currentUser->hash->passwordHash);
   free(globalContext->currentUser->hash->usernameHash);
+  free(globalContext->currentUser->currentContext->encryptionKey);
 
   free(globalContext->currentUser);
   free(globalContext);
