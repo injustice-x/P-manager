@@ -19,7 +19,6 @@ typedef struct {
   int entryCount;
   entry *entries;
   unsigned char *encryptionKey;
-  size_t *encryptionKeyLen;
 } userContext;
 
 typedef struct {
@@ -33,6 +32,7 @@ typedef struct {
 } user;
 
 typedef struct {
+  const char *username;
   const char *filePath;
   user *currentUser;
 } passwordManagerContext;
@@ -59,5 +59,7 @@ char *jsonEntries(entry *entries, char *name, size_t entryCount);
 entry *unJsonEntries(char *jsonString, int *numEntries);
 int *encryptData(const char *dataFilePath, entry *entries);
 int *decryptData(const char *dataFilePath, entry *entries);
+unsigned char *deriveAesKey(unsigned char *master_hash, size_t hash_len,
+                            char *user_salt);
 
 #endif // !CONTEXT_H
