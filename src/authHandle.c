@@ -1,6 +1,7 @@
 #include "../include/context.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define MAX_SIZE 50
 #define DIGEST_SIZE 32 // SHA3-256 produces 32 bytes
@@ -8,6 +9,7 @@
 int addUser(passwordManagerContext *globalContext) {
   char *username = malloc(MAX_SIZE);
   char *password = malloc(MAX_SIZE);
+  char *salt;
   unsigned int usernameHashLen = 0;
   unsigned int passwordHashLen = 0;
 
@@ -21,12 +23,18 @@ int addUser(passwordManagerContext *globalContext) {
 
   printf("Enter the password: ");
   scanf("%49s", password);
+  salt = strcat(username, "salt");
 
   hash->passwordHash = hashIt(password, &passwordHashLen);
   writeHashes(hash, globalContext->filePath);
   userContext *currentContext = globalContext->currentUser->currentContext;
   currentContext->entryCount = 0;
-  printf("\nUsername: %s\nPassword: %s\n", username, password);
+  globalContext->username = username;
+  printf("\nUsername: %s\nPassword: %s\n", globalContext->username, password);
+
+  globalContext->currentUser->currentContext->encryptionKey =
+      deriveAesKey(hash->passwordHash, passwordHashLen, salt);
+
   free(username);
   free(password);
   return 0;
@@ -34,14 +42,11 @@ int addUser(passwordManagerContext *globalContext) {
 
 int getUser(passwordManagerContext *globalContext) {
 
+  char *salt;
   hashes *temp = malloc(sizeof(hashes));
   temp = getHashes(globalContext->filePath);
   temp->passwordHash = malloc(DIGEST_SIZE);
   temp->usernameHash = malloc(DIGEST_SIZE);
-
-  for (unsigned int i = 0; i < 32; ++i) {
-    printf("%02x", temp->passwordHash[i]);
-  }
 
   char *username = malloc(MAX_SIZE);
   char *password = malloc(MAX_SIZE);
@@ -64,8 +69,19 @@ int getUser(passwordManagerContext *globalContext) {
 
   if (*hash->usernameHash != *temp->usernameHash ||
       *hash->passwordHash != *temp->passwordHash) {
-    printf("fail");
+    printf("login failed");
+    free(username);
+    free(password);
+    free(salt);
+    return 0;
   } else
     printf("success");
+
+  salt = strcat(username, "salt");
+  globalContext->currentUser->currentContext->encryptionKey =
+      deriveAesKey(hash->passwordHash, passwordHashLen, salt);
+
+  free(username);
+  free(password);
   return 0;
 }
