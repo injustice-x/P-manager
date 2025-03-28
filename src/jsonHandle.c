@@ -66,7 +66,7 @@ entry *unJsonEntries(char *jsonString, int *numEntries) {
   return jEntry;
 }
 
-char *jsonEntries(entry *entries, char *name, size_t entryCount) {
+char *jsonEntries(entry *entries, const char *name, int entryCount) {
 
   char *jsonString;
   cJSON *entriesTemp = NULL;
