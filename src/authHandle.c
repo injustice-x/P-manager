@@ -26,10 +26,10 @@ int addUser(passwordManagerContext *globalContext) {
   salt = strcat(username, "salt");
 
   hash->passwordHash = hashIt(password, &passwordHashLen);
-  writeHashes(hash, globalContext->filePath);
+  writeHashes(hash, globalContext->filePath, 0);
   userContext *currentContext = globalContext->currentUser->currentContext;
   currentContext->entryCount = 0;
-  globalContext->username = username;
+  globalContext->username = strdup(username);
   printf("\nUsername: %s\nPassword: %s\n", globalContext->username, password);
 
   globalContext->currentUser->currentContext->encryptionKey =
@@ -41,9 +41,9 @@ int addUser(passwordManagerContext *globalContext) {
 }
 
 int getUser(passwordManagerContext *globalContext) {
-
   char *salt;
   hashes *temp = malloc(sizeof(hashes));
+
   temp = getHashes(globalContext->filePath);
   temp->passwordHash = malloc(DIGEST_SIZE);
   temp->usernameHash = malloc(DIGEST_SIZE);
@@ -77,6 +77,7 @@ int getUser(passwordManagerContext *globalContext) {
   } else
     printf("success");
 
+  globalContext->username = strdup(username);
   salt = strcat(username, "salt");
   globalContext->currentUser->currentContext->encryptionKey =
       deriveAesKey(hash->passwordHash, passwordHashLen, salt);
