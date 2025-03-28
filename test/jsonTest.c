@@ -5,7 +5,7 @@
 
 int main(int argc, char *argv[]) {
   entry *testJson;
-  size_t count = 0;
+  size_t count = 2;
   int numEntries = 2;
   testJson = malloc(sizeof(entry) * count);
   testJson[1].name = "name1";
@@ -19,7 +19,7 @@ int main(int argc, char *argv[]) {
   testJson[0].website = "website0";
   char *testJsonEntries = jsonEntries(testJson, "user", count);
   if (testJsonEntries != NULL) {
-    /*printf("%s\n", testJsonEntries);*/
+    printf("%s\n", testJsonEntries);
   } else {
     fprintf(stderr, "Failed to create JSON string\n");
   }
