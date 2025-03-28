@@ -47,18 +47,21 @@ int getUser(passwordManagerContext *globalContext);
 int addUser(passwordManagerContext *globalContext);
 int addPassword(passwordManagerContext *globalContext);
 int editPassword(passwordManagerContext *globalContext);
+int showVault(passwordManagerContext *globalContext);
+int encryptData(passwordManagerContext *globalContext);
+int decryptData(passwordManagerContext *globalContext);
 void freeGlobalContext(passwordManagerContext *globalContext);
 
 /*helper functions*/
 unsigned char *hashIt(char *input, unsigned int *digest_len);
 hashes *getHashes(const char *dataFilePath);
-int writeHashes(hashes *hash, const char *dataFilePath);
-int *writeData(unsigned char *encrypted, const char *dataFilePath);
+int getEntryCount(const char *dataFilePath);
+int writeHashes(hashes *hash, const char *dataFilePath, int entryCount);
+int *writeData(unsigned char *encrypted, const char *dataFilePath,
+               int entryCount);
 unsigned char *getData(const char *dataFilePath);
-char *jsonEntries(entry *entries, char *name, size_t entryCount);
+char *jsonEntries(entry *entries, const char *name, int entryCount);
 entry *unJsonEntries(char *jsonString, int *numEntries);
-int *encryptData(const char *dataFilePath, entry *entries);
-int *decryptData(const char *dataFilePath, entry *entries);
 unsigned char *deriveAesKey(unsigned char *master_hash, size_t hash_len,
                             char *user_salt);
 

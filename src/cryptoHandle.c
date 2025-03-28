@@ -1,6 +1,7 @@
 #include "../include/context.h"
 #include <openssl/err.h>
 #include <openssl/evp.h>
+#include <time.h>
 
 #define DIGEST_SIZE 32 // SHA3-256 produces 32 bytes
 
@@ -73,3 +74,14 @@ unsigned char *deriveAesKey(unsigned char *master_hash, size_t hash_len,
 
   return aes_key;
 }
+int encryptData(passwordManagerContext *globalContext) {
+
+  char *jsonEntr =
+      jsonEntries(globalContext->currentUser->currentContext->entries,
+                  globalContext->username,
+                  globalContext->currentUser->currentContext->entryCount);
+
+  return EXIT_SUCCESS;
+}
+
+int decryptData(passwordManagerContext *globalContext) { return EXIT_SUCCESS; }
