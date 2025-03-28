@@ -59,15 +59,22 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  int choice = 1;
+  int choice = 0;
   while (choice == 0) {
     printf("Select from below:\n");
     printf("1.add new item\n");
-    printf("2.check vault\n");
+    printf("2.view vault\n");
     printf("3.search vault\n");
     printf("0.exit\n");
 
-    switch (choice) { case 1:; }
+    scanf("%d", &choice);
+
+    switch (choice) {
+    case 2:
+      printf("choice 2");
+      int x = getEntryCount(globalContext->filePath);
+      break;
+    }
   }
 
   // Clean up
