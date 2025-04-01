@@ -90,14 +90,17 @@ int encryptData(passwordManagerContext *globalContext) {
   }
 
   const unsigned char *plaintext = (const unsigned char *)strdup(jsonEntr);
+  globalContext->currentUser->currentContext->crypto->plaintext = plaintext;
   if (plaintext == NULL) {
     fprintf(stderr, "Memory allocation failed.\n");
     return -1;
   }
   int plaintext_len = strlen((const char *)plaintext);
+  globalContext->currentUser->currentContext->crypto->plaintext_len =
+      &plaintext_len;
 
   const unsigned char *key =
-      globalContext->currentUser->currentContext->encryptionKey;
+      globalContext->currentUser->currentContext->crypto->encryptionKey;
 
   unsigned char iv[16];
   if (1 != RAND_bytes(iv, sizeof(iv))) {
@@ -105,6 +108,10 @@ int encryptData(passwordManagerContext *globalContext) {
     free((void *)plaintext);
     return -1;
   }
+
+  globalContext->currentUser->currentContext->crypto->iv = malloc(sizeof(iv));
+  globalContext->currentUser->currentContext->crypto->iv =
+      (const unsigned char *)&iv;
   EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
   if (!ctx) {
     fprintf(stderr, "Failed to create context\n");
@@ -173,13 +180,17 @@ int encryptData(passwordManagerContext *globalContext) {
 
   fclose(file);
   free(ciphertext);
-
+  free((char *)jsonEntr);
+  free((char *)plaintext);
   return ciphertext_len;
 }
 
-int decryptString(const unsigned char *ciphertext, int ciphertext_len,
-                  const unsigned char *key, const unsigned char *iv,
-                  unsigned char *plaintext) {
+int decryptString(passwordManagerContext *globalContext) {
+  const unsigned char *ciphertext;
+  int ciphertext_len;
+  const unsigned char *key;
+  const unsigned char *iv;
+  unsigned char *plaintext;
   EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
   int len, plaintext_len;
 
@@ -215,4 +226,3 @@ int decryptString(const unsigned char *ciphertext, int ciphertext_len,
   EVP_CIPHER_CTX_free(ctx);
   return plaintext_len;
 }
-int decryptData(passwordManagerContext *globalContext) { return EXIT_SUCCESS; }
