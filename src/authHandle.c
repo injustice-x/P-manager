@@ -32,7 +32,7 @@ int addUser(passwordManagerContext *globalContext) {
   globalContext->username = strdup(username);
   printf("\nUsername: %s\nPassword: %s\n", globalContext->username, password);
 
-  globalContext->currentUser->currentContext->encryptionKey =
+  globalContext->currentUser->currentContext->crypto->encryptionKey =
       deriveAesKey(hash->passwordHash, passwordHashLen, salt);
 
   free(username);
@@ -79,7 +79,7 @@ int getUser(passwordManagerContext *globalContext) {
 
   globalContext->username = strdup(username);
   salt = strcat(username, "salt");
-  globalContext->currentUser->currentContext->encryptionKey =
+  globalContext->currentUser->currentContext->crypto->encryptionKey =
       deriveAesKey(hash->passwordHash, passwordHashLen, salt);
 
   free(username);
