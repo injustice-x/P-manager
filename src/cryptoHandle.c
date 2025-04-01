@@ -1,6 +1,10 @@
 #include "../include/context.h"
 #include <openssl/err.h>
 #include <openssl/evp.h>
+#include <openssl/rand.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
 #define DIGEST_SIZE 32 // SHA3-256 produces 32 bytes
@@ -74,14 +78,141 @@ unsigned char *deriveAesKey(unsigned char *master_hash, size_t hash_len,
 
   return aes_key;
 }
-int encryptData(passwordManagerContext *globalContext) {
 
-  char *jsonEntr =
+int encryptData(passwordManagerContext *globalContext) {
+  const char *jsonEntr =
       jsonEntries(globalContext->currentUser->currentContext->entries,
                   globalContext->username,
                   globalContext->currentUser->currentContext->entryCount);
+  if (jsonEntr == NULL) {
+    fprintf(stderr, "jsonEntries returned NULL.\n");
+    return -1;
+  }
 
-  return EXIT_SUCCESS;
+  const unsigned char *plaintext = (const unsigned char *)strdup(jsonEntr);
+  if (plaintext == NULL) {
+    fprintf(stderr, "Memory allocation failed.\n");
+    return -1;
+  }
+  int plaintext_len = strlen((const char *)plaintext);
+
+  const unsigned char *key =
+      globalContext->currentUser->currentContext->encryptionKey;
+
+  unsigned char iv[16];
+  if (1 != RAND_bytes(iv, sizeof(iv))) {
+    fprintf(stderr, "IV generation failed.\n");
+    free((void *)plaintext);
+    return -1;
+  }
+  EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
+  if (!ctx) {
+    fprintf(stderr, "Failed to create context\n");
+    free((void *)plaintext);
+    return -1;
+  }
+
+  if (1 != EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv)) {
+    fprintf(stderr, "Encryption initialization failed\n");
+    EVP_CIPHER_CTX_free(ctx);
+    free((void *)plaintext);
+    return -1;
+  }
+
+  int ciphertext_len = plaintext_len + EVP_CIPHER_block_size(EVP_aes_256_cbc());
+  unsigned char *ciphertext = malloc(ciphertext_len);
+  if (ciphertext == NULL) {
+    fprintf(stderr, "Memory allocation failed for ciphertext.\n");
+    EVP_CIPHER_CTX_free(ctx);
+    free((void *)plaintext);
+    return -1;
+  }
+
+  int len;
+  if (1 != EVP_EncryptUpdate(ctx, ciphertext, &len, plaintext, plaintext_len)) {
+    fprintf(stderr, "Encryption update failed\n");
+    EVP_CIPHER_CTX_free(ctx);
+    free((void *)plaintext);
+    free(ciphertext);
+    return -1;
+  }
+  ciphertext_len = len;
+
+  if (1 != EVP_EncryptFinal_ex(ctx, ciphertext + len, &len)) {
+    fprintf(stderr, "Encryption finalization failed\n");
+    EVP_CIPHER_CTX_free(ctx);
+    free((void *)plaintext);
+    free(ciphertext);
+    return -1;
+  }
+  ciphertext_len += len;
+
+  EVP_CIPHER_CTX_free(ctx);
+  free((void *)plaintext);
+
+  FILE *file = fopen("encrypted", "wb");
+  if (file == NULL) {
+    fprintf(stderr, "Failed to open file for writing.\n");
+    free(ciphertext);
+    return -1;
+  }
+
+  if (fwrite(iv, 1, sizeof(iv), file) != sizeof(iv)) {
+    fprintf(stderr, "Failed to write IV to file.\n");
+    fclose(file);
+    free(ciphertext);
+    return -1;
+  }
+
+  if (fwrite(ciphertext, 1, ciphertext_len, file) != (size_t)ciphertext_len) {
+    fprintf(stderr, "Failed to write ciphertext to file.\n");
+    fclose(file);
+    free(ciphertext);
+    return -1;
+  }
+
+  fclose(file);
+  free(ciphertext);
+
+  return ciphertext_len;
 }
 
+int decryptString(const unsigned char *ciphertext, int ciphertext_len,
+                  const unsigned char *key, const unsigned char *iv,
+                  unsigned char *plaintext) {
+  EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
+  int len, plaintext_len;
+
+  if (!ctx) {
+    fprintf(stderr, "Failed to create context\n");
+    return -1;
+  }
+
+  // Initialize decryption operation.
+  if (1 != EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv)) {
+    fprintf(stderr, "Decryption initialization failed\n");
+    EVP_CIPHER_CTX_free(ctx);
+    return -1;
+  }
+
+  // Decrypt the ciphertext.
+  if (1 !=
+      EVP_DecryptUpdate(ctx, plaintext, &len, ciphertext, ciphertext_len)) {
+    fprintf(stderr, "Decryption update failed\n");
+    EVP_CIPHER_CTX_free(ctx);
+    return -1;
+  }
+  plaintext_len = len;
+
+  // Finalize decryption.
+  if (1 != EVP_DecryptFinal_ex(ctx, plaintext + len, &len)) {
+    fprintf(stderr, "Decryption finalization failed\n");
+    EVP_CIPHER_CTX_free(ctx);
+    return -1;
+  }
+  plaintext_len += len;
+
+  EVP_CIPHER_CTX_free(ctx);
+  return plaintext_len;
+}
 int decryptData(passwordManagerContext *globalContext) { return EXIT_SUCCESS; }
