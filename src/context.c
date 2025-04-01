@@ -17,6 +17,8 @@ passwordManagerContext *initPasswordManagerContext(const char *dataFilePath) {
   globalContext->currentUser = malloc(sizeof(user));
   globalContext->currentUser->hash = malloc(sizeof(hashes));
   globalContext->currentUser->currentContext = malloc(sizeof(userContext));
+  globalContext->currentUser->currentContext->crypto =
+      malloc(sizeof(cryptoContext));
 
   if (globalContext->currentUser == NULL) {
     free(globalContext->currentUser);
@@ -32,7 +34,9 @@ void freeGlobalContext(passwordManagerContext *globalContext) {
 
   free(globalContext->currentUser->hash->passwordHash);
   free(globalContext->currentUser->hash->usernameHash);
-  free(globalContext->currentUser->currentContext->encryptionKey);
+  free(globalContext->currentUser->currentContext->crypto->encryptionKey);
+  free((
+      unsigned char *)(globalContext->currentUser->currentContext->crypto->iv));
 
   free(globalContext->currentUser);
   free(globalContext);
