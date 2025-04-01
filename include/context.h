@@ -16,10 +16,19 @@ typedef struct {
 } entry;
 
 typedef struct {
+  unsigned char *encryptionKey;
+  const unsigned char *ciphertext;
+  int ciphertext_len;
+  const unsigned char *key;
+  const unsigned char *iv;
+  const unsigned char *plaintext;
+  int len, *plaintext_len;
+} cryptoContext;
+
+typedef struct {
   int entryCount;
   entry *entries;
-  unsigned char *encryptionKey;
-  int cipherTextLen;
+  cryptoContext *crypto;
 } userContext;
 
 typedef struct {
