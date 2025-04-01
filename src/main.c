@@ -73,22 +73,23 @@ int main(int argc, char *argv[]) {
     switch (choice) {
     case 1: {
       globalContext->currentUser->currentContext->entries =
-          malloc(2 * sizeof(entry));
+          malloc(sizeof(entry));
       if (!globalContext->currentUser->currentContext->entries) {
         fprintf(stderr, "Memory allocation failed.\n");
         exit(1);
       }
       entry *testJson = globalContext->currentUser->currentContext->entries;
-
-      testJson[1].name = "name1";
+      globalContext->currentUser->currentContext->entryCount = 1;
+      testJson->name = "name1";
       printf("enter username: ");
-      testJson[1].username = "username1"; // Replace with user input if needed
+      testJson->username = "username1"; // Replace with user input if needed
       printf("enter password: ");
-      testJson[1].password = "password1"; // Replace with user input if needed
+      testJson->password = "password1"; // Replace with user input if needed
       printf("enter website: ");
-      testJson[1].website = "website1"; // Replace with user input if needed
+      testJson->website = "website1"; // Replace with user input if needed
 
       encryptData(globalContext);
+      decryptData(globalContext);
       break;
     }
     case 2:
