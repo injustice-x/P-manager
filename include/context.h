@@ -19,6 +19,7 @@ typedef struct {
   int entryCount;
   entry *entries;
   unsigned char *encryptionKey;
+  int cipherTextLen;
 } userContext;
 
 typedef struct {
