@@ -1,5 +1,6 @@
 #include "../include/context.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #define MAX_SIZE 50
 
@@ -70,9 +71,30 @@ int main(int argc, char *argv[]) {
     scanf("%d", &choice);
 
     switch (choice) {
+    case 1: {
+      globalContext->currentUser->currentContext->entries =
+          malloc(2 * sizeof(entry));
+      if (!globalContext->currentUser->currentContext->entries) {
+        fprintf(stderr, "Memory allocation failed.\n");
+        exit(1);
+      }
+      entry *testJson = globalContext->currentUser->currentContext->entries;
+
+      testJson[1].name = "name1";
+      printf("enter username: ");
+      testJson[1].username = "username1"; // Replace with user input if needed
+      printf("enter password: ");
+      testJson[1].password = "password1"; // Replace with user input if needed
+      printf("enter website: ");
+      testJson[1].website = "website1"; // Replace with user input if needed
+
+      encryptData(globalContext);
+      break;
+    }
     case 2:
       printf("choice 2");
       int x = getEntryCount(globalContext->filePath);
+
       break;
     }
   }
