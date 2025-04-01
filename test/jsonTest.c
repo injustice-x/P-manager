@@ -28,6 +28,7 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
+  // encryptData(globalContext);
   // Print out each entry.
   for (int i = 0; i < numEntries; i++) {
     printf("Entry %d:\n", i);
@@ -44,6 +45,7 @@ int main(int argc, char *argv[]) {
     free(entries[i].username);
     free(entries[i].password);
   }
+
   free(entries);
   free(testJson);
   free(testJsonEntries); // Free the allocated JSON string
