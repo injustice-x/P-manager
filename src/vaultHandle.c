@@ -11,6 +11,6 @@ int showVault(passwordManagerContext *globalContext) {
 
   entry *entries = malloc(sizeof(entry) * noEntries);
 
-  globalContext->currentUser->currentContext->entries = entries;
+  entries = globalContext->currentUser->currentContext->entries;
   return 0;
 }
