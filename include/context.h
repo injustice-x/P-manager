@@ -18,11 +18,11 @@ typedef struct {
 typedef struct {
   unsigned char *encryptionKey;
   const unsigned char *ciphertext;
-  int ciphertext_len;
+  int *ciphertext_len;
   const unsigned char *key;
   const unsigned char *iv;
   const unsigned char *plaintext;
-  int len, *plaintext_len;
+  int *len, *plaintext_len;
 } cryptoContext;
 
 typedef struct {
