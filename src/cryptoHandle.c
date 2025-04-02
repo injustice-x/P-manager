@@ -88,7 +88,6 @@ int encryptData(passwordManagerContext *globalContext) {
     fprintf(stderr, "jsonEntries returned NULL.\n");
     return -1;
   }
-  printf("%s", jsonEntr);
 
   const unsigned char *plaintext = (const unsigned char *)strdup(jsonEntr);
   globalContext->currentUser->currentContext->crypto->plaintext = plaintext;
@@ -280,6 +279,5 @@ int decryptData(passwordManagerContext *globalContext) {
     *(globalContext->currentUser->currentContext->crypto->plaintext_len) =
         plaintext_len;
 
-  printf("%s", plaintext);
   return plaintext_len;
 }
