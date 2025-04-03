@@ -7,76 +7,131 @@
 #define MAX_WEBSITE_LEN 100
 
 int showVault(passwordManagerContext *globalContext) {
-  int noEntries = getEntryCount(globalContext->filePath);
-
-  if (0 == noEntries) {
-    printf("Vault is Empty!!!");
-    return 0;
+  if (globalContext == NULL || globalContext->currentUser == NULL ||
+      globalContext->currentUser->currentContext == NULL) {
+    fprintf(stderr, "Invalid global context\n");
+    return EXIT_FAILURE;
   }
 
-  if (globalContext->currentUser->currentContext->entries == NULL) {
-    entry *entries = malloc(sizeof(entry) * noEntries);
-    globalContext->currentUser->currentContext->entries = entries;
-    decryptData(globalContext);
-    entries = unJsonEntries(
-        (char *)globalContext->currentUser->currentContext->crypto->plaintext,
-        &globalContext->currentUser->currentContext->entryCount);
-    return 0;
+  userContext *context = globalContext->currentUser->currentContext;
+  int noEntries = context->entryCount;
+
+  if (noEntries == 0) {
+    printf("Vault is Empty!!!\n");
+    return EXIT_SUCCESS;
   }
 
-  return 0;
+  if (context->entries == NULL) {
+    fprintf(stderr, "Entries are not loaded\n");
+    return EXIT_FAILURE;
+  }
+
+  printf("Vault Entries:\n");
+  for (int i = 0; i < noEntries; i++) {
+    printf("Entry %d:\n", i + 1);
+    printf("  Name: %s\n", context->entries[i].name);
+    printf("  Username: %s\n", context->entries[i].username);
+    printf("  Password: %s\n", context->entries[i].password);
+    printf("  Website: %s\n", context->entries[i].website);
+    printf("\n");
+  }
+
+  return EXIT_SUCCESS;
 }
 
 int addEntry(passwordManagerContext *globalContext) {
-  int *size = &globalContext->currentUser->currentContext->entryCount;
-  entry *entries = globalContext->currentUser->currentContext->entries;
-
-  if (*size == 0) {
-    entries = malloc(sizeof(entry));
-    if (entries == NULL) {
-      perror("memory allocation failed");
-      return EXIT_FAILURE;
-    }
-  } else {
-    entries = realloc(entries, (*size + 1) * sizeof(entry));
-    if (entries == NULL) {
-      perror("memory reallocation failed");
-      return EXIT_FAILURE;
-    }
+  if (globalContext == NULL || globalContext->currentUser == NULL ||
+      globalContext->currentUser->currentContext == NULL) {
+    fprintf(stderr, "Invalid global context\n");
+    return EXIT_FAILURE;
   }
-  globalContext->currentUser->currentContext->entries = entries;
 
-  // Use the new entry index (which is the old count) for the new entry.
-  int index = *size;
+  userContext *context = globalContext->currentUser->currentContext;
+  int newSize = context->entryCount + 1;
 
-  // Allocate memory for each string field.
-  entries[index].name = malloc(MAX_NAME_LEN);
-  entries[index].username = malloc(MAX_USERNAME_LEN);
-  entries[index].password = malloc(MAX_PASSWORD_LEN);
-  entries[index].website = malloc(MAX_WEBSITE_LEN);
+  entry *tempEntries = realloc(context->entries, newSize * sizeof(entry));
+  if (tempEntries == NULL) {
+    perror("Memory reallocation failed");
+    return EXIT_FAILURE;
+  }
+  context->entries = tempEntries;
 
-  if (!entries[index].name || !entries[index].username ||
-      !entries[index].password || !entries[index].website) {
-    perror("memory allocation failed for entry strings");
+  entry *newEntry = &context->entries[context->entryCount];
+
+  newEntry->name = malloc(MAX_NAME_LEN);
+  newEntry->username = malloc(MAX_USERNAME_LEN);
+  newEntry->password = malloc(MAX_PASSWORD_LEN);
+  newEntry->website = malloc(MAX_WEBSITE_LEN);
+
+  if (!newEntry->name || !newEntry->username || !newEntry->password ||
+      !newEntry->website) {
+    perror("Memory allocation failed for entry fields");
+    free(newEntry->name);
+    free(newEntry->username);
+    free(newEntry->password);
+    free(newEntry->website);
     return EXIT_FAILURE;
   }
 
   printf("Enter name of the entry: ");
-  fgets(entries[index].name, MAX_NAME_LEN, stdin);
-  entries[index].name[strcspn(entries[index].name, "\n")] = '\0';
+  if (fgets(newEntry->name, MAX_NAME_LEN, stdin) == NULL) {
+    fprintf(stderr, "Error reading name\n");
+    free(newEntry->name);
+    free(newEntry->username);
+    free(newEntry->password);
+    free(newEntry->website);
+    return EXIT_FAILURE;
+  }
+  newEntry->name[strcspn(newEntry->name, "\n")] = '\0';
 
   printf("Enter username: ");
-  fgets(entries[index].username, MAX_USERNAME_LEN, stdin);
-  entries[index].username[strcspn(entries[index].username, "\n")] = '\0';
+  if (fgets(newEntry->username, MAX_USERNAME_LEN, stdin) == NULL) {
+    fprintf(stderr, "Error reading username\n");
+    free(newEntry->name);
+    free(newEntry->username);
+    free(newEntry->password);
+    free(newEntry->website);
+    return EXIT_FAILURE;
+  }
+  newEntry->username[strcspn(newEntry->username, "\n")] = '\0';
 
   printf("Enter password: ");
-  fgets(entries[index].password, MAX_PASSWORD_LEN, stdin);
-  entries[index].password[strcspn(entries[index].password, "\n")] = '\0';
+  if (fgets(newEntry->password, MAX_PASSWORD_LEN, stdin) == NULL) {
+    fprintf(stderr, "Error reading password\n");
+    free(newEntry->name);
+    free(newEntry->username);
+    free(newEntry->password);
+    free(newEntry->website);
+    return EXIT_FAILURE;
+  }
+  newEntry->password[strcspn(newEntry->password, "\n")] = '\0';
 
   printf("Enter website: ");
-  fgets(entries[index].website, MAX_WEBSITE_LEN, stdin);
-  entries[index].website[strcspn(entries[index].website, "\n")] = '\0';
+  if (fgets(newEntry->website, MAX_WEBSITE_LEN, stdin) == NULL) {
+    fprintf(stderr, "Error reading website\n");
+    free(newEntry->name);
+    free(newEntry->username);
+    free(newEntry->password);
+    free(newEntry->website);
+    return EXIT_FAILURE;
+  }
+  newEntry->website[strcspn(newEntry->website, "\n")] = '\0';
 
-  (*size)++;
-  return 0;
+  context->entryCount++;
+
+  int ciphertext_len = encryptData(globalContext);
+  if (ciphertext_len < 0) {
+    fprintf(stderr, "Encryption failed\n");
+    return EXIT_FAILURE;
+  }
+
+  // Write the encrypted data to the file
+  if (writeData((unsigned char *)globalContext->currentUser->currentContext
+                    ->crypto->ciphertext,
+                globalContext->filePath, context->entryCount) != EXIT_SUCCESS) {
+    fprintf(stderr, "Failed to write encrypted data to file\n");
+    return EXIT_FAILURE;
+  }
+
+  return EXIT_SUCCESS;
 }
