@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h> // for getopt, access
+#include <unistd.h>
 
 #define MAX_SIZE 50
 
@@ -13,7 +13,7 @@ int main(int argc, char *argv[]) {
   }
 
   int opt;
-  char *filePath = NULL; // non-const so it can be freed later
+  char *filePath = NULL;
 
   // Process command-line options using getopt
   while ((opt = getopt(argc, argv, "f:")) != -1) {
@@ -91,12 +91,8 @@ int main(int argc, char *argv[]) {
       }
       break;
     case 2:
-      // In this case, we encrypt, decrypt, then show the vault.
       if (encryptData(globalContext) < 0) {
         fprintf(stderr, "Encryption failed.\n");
-      }
-      if (decryptData(globalContext) < 0) { // assuming decryptString exists
-        fprintf(stderr, "Decryption failed.\n");
       }
       showVault(globalContext);
       break;
