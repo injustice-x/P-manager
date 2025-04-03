@@ -14,18 +14,24 @@ int showVault(passwordManagerContext *globalContext) {
   }
 
   userContext *context = globalContext->currentUser->currentContext;
+
+  if (context->entries == NULL) {
+
+    globalContext->currentUser->currentContext->crypto->ciphertext =
+        getData(globalContext->filePath);
+    decryptData(globalContext);
+    printf("%s", context->crypto->plaintext);
+    context->entries = unJsonEntries(
+        (char *)globalContext->currentUser->currentContext->crypto->plaintext,
+        &globalContext->currentUser->currentContext->entryCount);
+  }
+
   int noEntries = context->entryCount;
 
   if (noEntries == 0) {
     printf("Vault is Empty!!!\n");
     return EXIT_SUCCESS;
   }
-
-  if (context->entries == NULL) {
-    fprintf(stderr, "Entries are not loaded\n");
-    return EXIT_FAILURE;
-  }
-
   printf("Vault Entries:\n");
   for (int i = 0; i < noEntries; i++) {
     printf("Entry %d:\n", i + 1);
