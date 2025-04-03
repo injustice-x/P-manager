@@ -113,42 +113,6 @@ hashes *getHashes(const char *dataFilePath) {
   return result;
 }
 
-int getEntryCount(const char *dataFilePath) {
-  if (dataFilePath == NULL) {
-    fprintf(stderr, "Invalid input to getEntryCount\n");
-    return EXIT_FAILURE;
-  }
-
-  FILE *f = fopen(dataFilePath, "r");
-  if (f == NULL) {
-    perror("Error opening file");
-    return EXIT_FAILURE;
-  }
-
-  char buffer[MAX_LINE_LENGTH];
-  int currentLine = 0;
-  int entryCount = 0;
-
-  while (fgets(buffer, sizeof(buffer), f) != NULL) {
-    currentLine++;
-    if (currentLine == 3) {
-      // 'buffer' now contains the content of the third line.
-      buffer[strcspn(buffer, "\n")] = '\0'; // Remove newline character
-      entryCount = atoi(buffer);
-      break;
-    }
-  }
-
-  if (currentLine < 3) {
-    fprintf(stderr, "File does not contain enough lines to read entry count\n");
-    fclose(f);
-    return EXIT_FAILURE;
-  }
-
-  fclose(f);
-  return entryCount;
-}
-
 int writeData(unsigned char *encrypted, const char *dataFilePath,
               int entryCount) {
   FILE *f = fopen(dataFilePath, "r+");
@@ -174,6 +138,238 @@ int writeData(unsigned char *encrypted, const char *dataFilePath,
     return EXIT_FAILURE;
   }
 
+  fclose(f);
+  return EXIT_SUCCESS;
+}
+
+unsigned char *getData(const char *dataFilePath) {
+  if (dataFilePath == NULL) {
+    fprintf(stderr, "Invalid file path\n");
+    return NULL;
+  }
+
+  FILE *fp = fopen(dataFilePath, "r");
+  if (!fp) {
+    perror("Error opening file");
+    return NULL;
+  }
+
+  char buffer[1024];
+  // Skip first three lines
+  for (int i = 0; i < 3; i++) {
+    if (fgets(buffer, sizeof(buffer), fp) == NULL) {
+      // If file has less than three lines, nothing to read from 4th line onward
+      fclose(fp);
+      return NULL;
+    }
+  }
+
+  // Get the current file position (i.e. start of fourth line)
+  long offset = ftell(fp);
+  if (offset == -1L) {
+    perror("ftell failed");
+    fclose(fp);
+    return NULL;
+  }
+
+  // Seek to end to determine total file size
+  if (fseek(fp, 0, SEEK_END) != 0) {
+    perror("fseek to end failed");
+    fclose(fp);
+    return NULL;
+  }
+
+  long fileSize = ftell(fp);
+  if (fileSize == -1L) {
+    perror("ftell failed");
+    fclose(fp);
+    return NULL;
+  }
+
+  // Calculate the size of data from 4th line onward
+  long dataSize = fileSize - offset;
+  if (dataSize <= 0) {
+    fclose(fp);
+    return NULL; // No data after the third line
+  }
+
+  // Allocate buffer for data plus a null terminator
+  unsigned char *data = malloc(dataSize + 1);
+  if (data == NULL) {
+    perror("Memory allocation failed");
+    fclose(fp);
+    return NULL;
+  }
+
+  // Reposition to the offset where the 4th line starts
+  if (fseek(fp, offset, SEEK_SET) != 0) {
+    perror("fseek to offset failed");
+    free(data);
+    fclose(fp);
+    return NULL;
+  }
+
+  // Read the remainder of the file into the buffer
+  size_t bytesRead = fread(data, 1, dataSize, fp);
+  data[bytesRead] = '\0'; // Null-terminate the data
+
+  fclose(fp);
+  return data;
+}
+
+// getEntryCount: Reads the 3rd line of the file, converts it to an int, and
+// returns it.
+int getEntryCount(const char *dataFilePath) {
+  if (dataFilePath == NULL) {
+    fprintf(stderr, "Invalid file path\n");
+    return EXIT_FAILURE;
+  }
+  FILE *f = fopen(dataFilePath, "r");
+  if (f == NULL) {
+    perror("Error opening file");
+    return EXIT_FAILURE;
+  }
+
+  char buffer[MAX_LINE_LENGTH];
+  int currentLine = 0;
+  int entryCount = 0;
+  while (fgets(buffer, sizeof(buffer), f) != NULL) {
+    currentLine++;
+    if (currentLine == 3) {
+      // Remove any trailing newline character
+      buffer[strcspn(buffer, "\n")] = '\0';
+      entryCount = atoi(buffer);
+      break;
+    }
+  }
+  fclose(f);
+  return entryCount;
+}
+
+// writeEntryCount: Writes the given entryCount to the 3rd line of the file,
+// preserving the first two lines and any lines after the 3rd line.
+int writeEntryCount(const char *dataFilePath, int entryCount) {
+  if (dataFilePath == NULL) {
+    fprintf(stderr, "Invalid file path\n");
+    return EXIT_FAILURE;
+  }
+
+  FILE *f = fopen(dataFilePath, "r");
+  if (f == NULL) {
+    perror("Error opening file for reading");
+    return EXIT_FAILURE;
+  }
+
+  // Read all lines into an array of strings
+  char **lines = NULL;
+  int lineCount = 0;
+  char buffer[MAX_LINE_LENGTH];
+  while (fgets(buffer, sizeof(buffer), f) != NULL) {
+    lineCount++;
+    char **temp = realloc(lines, lineCount * sizeof(char *));
+    if (temp == NULL) {
+      perror("Memory allocation failed");
+      // Free previously allocated lines
+      for (int i = 0; i < lineCount - 1; i++) {
+        free(lines[i]);
+      }
+      free(lines);
+      fclose(f);
+      return EXIT_FAILURE;
+    }
+    lines = temp;
+    lines[lineCount - 1] = strdup(buffer);
+    if (lines[lineCount - 1] == NULL) {
+      perror("Memory allocation failed");
+      for (int i = 0; i < lineCount - 1; i++) {
+        free(lines[i]);
+      }
+      free(lines);
+      fclose(f);
+      return EXIT_FAILURE;
+    }
+  }
+  fclose(f);
+
+  // Ensure there are at least three lines.
+  if (lineCount < 3) {
+    // If not, add empty lines as needed.
+    int needed = 3 - lineCount;
+    char *emptyLine = strdup("\n");
+    if (emptyLine == NULL) {
+      perror("Memory allocation failed");
+      for (int i = 0; i < lineCount; i++) {
+        free(lines[i]);
+      }
+      free(lines);
+      return EXIT_FAILURE;
+    }
+    for (int i = 0; i < needed; i++) {
+      char **temp = realloc(lines, (lineCount + 1) * sizeof(char *));
+      if (temp == NULL) {
+        perror("Memory allocation failed");
+        for (int j = 0; j < lineCount; j++) {
+          free(lines[j]);
+        }
+        free(lines);
+        free(emptyLine);
+        return EXIT_FAILURE;
+      }
+      lines = temp;
+      lines[lineCount] = strdup(emptyLine);
+      if (lines[lineCount] == NULL) {
+        perror("Memory allocation failed");
+        for (int j = 0; j < lineCount; j++) {
+          free(lines[j]);
+        }
+        free(lines);
+        free(emptyLine);
+        return EXIT_FAILURE;
+      }
+      lineCount++;
+    }
+    free(emptyLine);
+  }
+
+  // Prepare the new third line with the entryCount value
+  char newLine[MAX_LINE_LENGTH];
+  snprintf(newLine, sizeof(newLine), "%d\n", entryCount);
+  free(lines[2]); // free the old third line
+  lines[2] = strdup(newLine);
+  if (lines[2] == NULL) {
+    perror("Memory allocation failed for new third line");
+    for (int i = 0; i < lineCount; i++) {
+      free(lines[i]);
+    }
+    free(lines);
+    return EXIT_FAILURE;
+  }
+
+  // Open the file for writing (overwrite)
+  f = fopen(dataFilePath, "w");
+  if (f == NULL) {
+    perror("Error opening file for writing");
+    for (int i = 0; i < lineCount; i++) {
+      free(lines[i]);
+    }
+    free(lines);
+    return EXIT_FAILURE;
+  }
+
+  // Write all lines back to the file
+  for (int i = 0; i < lineCount; i++) {
+    if (fputs(lines[i], f) == EOF) {
+      perror("Error writing to file");
+      fclose(f);
+      for (int j = 0; j < lineCount; j++) {
+        free(lines[j]);
+      }
+      free(lines);
+      return EXIT_FAILURE;
+    }
+    free(lines[i]);
+  }
+  free(lines);
   fclose(f);
   return EXIT_SUCCESS;
 }
