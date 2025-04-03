@@ -67,8 +67,8 @@ unsigned char *hashIt(char *input, unsigned int *digest_len);
 hashes *getHashes(const char *dataFilePath);
 int getEntryCount(const char *dataFilePath);
 int writeHashes(hashes *hash, const char *dataFilePath, int entryCount);
-int *writeData(unsigned char *encrypted, const char *dataFilePath,
-               int entryCount);
+int writeData(unsigned char *encrypted, const char *dataFilePath,
+              int entryCount);
 unsigned char *getData(const char *dataFilePath);
 char *jsonEntries(entry *entries, const char *name, int entryCount);
 entry *unJsonEntries(char *jsonString, int *numEntries);
