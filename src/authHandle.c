@@ -79,6 +79,8 @@ int getUser(passwordManagerContext *globalContext) {
 
   globalContext->username = strdup(username);
   salt = strcat(username, "salt");
+  userContext *currentContext = globalContext->currentUser->currentContext;
+  currentContext->entryCount = getEntryCount(globalContext->filePath);
   globalContext->currentUser->currentContext->crypto->encryptionKey =
       deriveAesKey(hash->passwordHash, passwordHashLen, salt);
 
