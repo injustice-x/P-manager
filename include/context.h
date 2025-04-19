@@ -64,13 +64,13 @@ void freeGlobalContext(passwordManagerContext *globalContext);
 
 /*helper functions*/
 unsigned char *hashIt(char *input, unsigned int *digest_len);
-hashes *getHashes(const char *dataFilePath);
-int getEntryCount(const char *dataFilePath);
-int writeEntryCount(const char *dataFilePath, int entryCount);
-int writeHashes(hashes *hash, const char *dataFilePath, int entryCount);
-int writeData(unsigned char *encrypted, const char *dataFilePath,
-              int entryCount);
-unsigned char *getData(const char *dataFilePath);
+int writeData(const char *filePath, hashes *hash, int entryCount,
+              unsigned char *iv, unsigned char *cipherText,
+              int *ciphertext_len);
+int getData(const char *path, unsigned char *usernameHash,
+            unsigned char *passwordHash, int *entryCount,
+            const unsigned char *iv, const unsigned char *cipherText,
+            int *ciphertext_len);
 char *jsonEntries(entry *entries, const char *name, int entryCount);
 entry *unJsonEntries(char *jsonString, int *numEntries);
 unsigned char *deriveAesKey(unsigned char *master_hash, size_t hash_len,
