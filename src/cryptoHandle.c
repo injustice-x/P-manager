@@ -8,6 +8,23 @@
 #include <time.h>
 
 #define DIGEST_SIZE 32 // SHA3-256 produces 32 bytes
+#define IV_SIZE 16
+
+int generateIV(unsigned char **iv) {
+  *iv = malloc(IV_SIZE);
+  if (*iv == NULL) {
+    fprintf(stderr, "Memory allocation failed for IV.\n");
+    return EXIT_FAILURE;
+  }
+
+  if (RAND_bytes(*iv, IV_SIZE) != 1) {
+    fprintf(stderr, "IV generation failed.\n");
+    free(*iv);
+    return EXIT_FAILURE;
+  }
+
+  return EXIT_SUCCESS;
+}
 
 unsigned char *hashIt(char *input, unsigned int *digest_len) {
   unsigned char *digest = malloc(DIGEST_SIZE);
@@ -106,25 +123,6 @@ int encryptData(passwordManagerContext *globalContext) {
   const unsigned char *key =
       globalContext->currentUser->currentContext->crypto->encryptionKey;
 
-  unsigned char iv[16];
-  if (1 != RAND_bytes(iv, sizeof(iv))) {
-    fprintf(stderr, "IV generation failed.\n");
-    free((void *)plaintext);
-    free((char *)jsonEntr);
-    return -1;
-  }
-
-  /* Allocate memory for iv and copy the generated iv */
-  globalContext->currentUser->currentContext->crypto->iv = malloc(sizeof(iv));
-  if (globalContext->currentUser->currentContext->crypto->iv == NULL) {
-    fprintf(stderr, "Memory allocation failed for iv.\n");
-    free((void *)plaintext);
-    free((char *)jsonEntr);
-    return -1;
-  }
-  memcpy((void *)globalContext->currentUser->currentContext->crypto->iv, iv,
-         sizeof(iv));
-
   EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
   if (!ctx) {
     fprintf(stderr, "Failed to create context\n");
@@ -186,29 +184,6 @@ int encryptData(passwordManagerContext *globalContext) {
   EVP_CIPHER_CTX_free(ctx);
   free((void *)plaintext);
 
-  FILE *file = fopen("encrypted", "wb");
-  if (file == NULL) {
-    fprintf(stderr, "Failed to open file for writing.\n");
-    /* Do not free ciphertext since we want to keep it in globalContext */
-    free((char *)jsonEntr);
-    return -1;
-  }
-
-  if (fwrite(iv, 1, sizeof(iv), file) != sizeof(iv)) {
-    fprintf(stderr, "Failed to write IV to file.\n");
-    fclose(file);
-    free((char *)jsonEntr);
-    return -1;
-  }
-
-  if (fwrite(ciphertext, 1, ciphertext_len, file) != (size_t)ciphertext_len) {
-    fprintf(stderr, "Failed to write ciphertext to file.\n");
-    fclose(file);
-    free((char *)jsonEntr);
-    return -1;
-  }
-
-  fclose(file);
   free((char *)jsonEntr);
   return ciphertext_len;
 }
