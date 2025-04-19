@@ -20,8 +20,8 @@ typedef struct {
   unsigned char *ciphertext;
   int *ciphertext_len;
   const unsigned char *key;
-  const unsigned char *iv;
-  unsigned char *plaintext;
+  unsigned char *iv;
+  const unsigned char *plaintext;
   int *len, *plaintext_len;
 } cryptoContext;
 
@@ -63,10 +63,12 @@ int decryptData(passwordManagerContext *globalContext);
 void freeGlobalContext(passwordManagerContext *globalContext);
 
 /*helper functions*/
+int generateIV(unsigned char **iv);
 unsigned char *hashIt(char *input, unsigned int *digest_len);
 int writeData(const char *filePath, hashes *hash, int entryCount,
-              unsigned char *iv, unsigned char *cipherText, int ciphertext_len);
-int getData(const char *path, hashes *hash, int *entryCount, unsigned char *iv,
+              unsigned char *iv, unsigned char *cipherText,
+              int *ciphertext_len);
+int getData(const char *path, hashes *hash, int *entryCount, unsigned char **iv,
             unsigned char **cipherText, int *ciphertext_len);
 char *jsonEntries(entry *entries, const char *name, int entryCount);
 entry *unJsonEntries(char *jsonString, int *numEntries);
