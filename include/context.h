@@ -58,8 +58,12 @@ int addUser(passwordManagerContext *globalContext);
 int addEntry(passwordManagerContext *globalContext);
 int editEntry(passwordManagerContext *globalContext);
 int showVault(passwordManagerContext *globalContext);
-int encryptData(passwordManagerContext *globalContext);
-int decryptData(passwordManagerContext *globalContext);
+int encryptData(unsigned char *plaintext, int plaintext_len, unsigned char *key,
+                unsigned char **iv, unsigned char **ciphertext,
+                int *ciphertext_len);
+int decryptData(unsigned char *ciphertext, int ciphertext_len,
+                unsigned char *key, unsigned char *iv,
+                unsigned char **plaintext, int *plaintext_len);
 void freeGlobalContext(passwordManagerContext *globalContext);
 
 /*helper functions*/
