@@ -96,163 +96,133 @@ unsigned char *deriveAesKey(unsigned char *master_hash, size_t hash_len,
   return aes_key;
 }
 
-int encryptData(passwordManagerContext *globalContext) {
-  const char *jsonEntr =
-      jsonEntries(globalContext->currentUser->currentContext->entries,
-                  globalContext->username,
-                  globalContext->currentUser->currentContext->entryCount);
-  if (jsonEntr == NULL) {
-    fprintf(stderr, "jsonEntries returned NULL.\n");
-    return -1;
+int encryptData(unsigned char *plaintext, int plaintext_len, unsigned char *key,
+                unsigned char **iv, unsigned char **ciphertext,
+                int *ciphertext_len) {
+  EVP_CIPHER_CTX *ctx = NULL;
+  int len = 0;
+  int total_len = 0;
+
+  // Allocate memory for IV
+  *iv = (unsigned char *)malloc(IV_SIZE);
+  if (*iv == NULL) {
+    fprintf(stderr, "Memory allocation failed for IV.\n");
+    return EXIT_FAILURE;
   }
 
-  const unsigned char *plaintext = (const unsigned char *)strdup(jsonEntr);
-  globalContext->currentUser->currentContext->crypto->plaintext = plaintext;
-  if (plaintext == NULL) {
-    fprintf(stderr, "Memory allocation failed.\n");
-    free((char *)jsonEntr);
-    return -1;
-  }
-  int plaintext_len = strlen((const char *)plaintext);
-  globalContext->currentUser->currentContext->crypto->plaintext_len =
-      malloc(sizeof(int));
-  if (globalContext->currentUser->currentContext->crypto->plaintext_len != NULL)
-    *(globalContext->currentUser->currentContext->crypto->plaintext_len) =
-        plaintext_len;
+  // Generate random IV
+  generateIV(iv);
 
-  const unsigned char *key =
-      globalContext->currentUser->currentContext->crypto->encryptionKey;
-
-  EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
-  if (!ctx) {
-    fprintf(stderr, "Failed to create context\n");
-    free((void *)plaintext);
-    free((char *)jsonEntr);
-    return -1;
+  // Create and initialize the context
+  ctx = EVP_CIPHER_CTX_new();
+  if (ctx == NULL) {
+    fprintf(stderr, "EVP_CIPHER_CTX_new failed.\n");
+    free(*iv);
+    return EXIT_FAILURE;
   }
 
-  if (1 != EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv)) {
-    fprintf(stderr, "Encryption initialization failed\n");
+  // Initialize the encryption operation with AES-256-CBC
+  if (1 != EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, *iv)) {
+    fprintf(stderr, "EVP_EncryptInit_ex failed.\n");
     EVP_CIPHER_CTX_free(ctx);
-    free((void *)plaintext);
-    free((char *)jsonEntr);
-    return -1;
+    free(*iv);
+    return EXIT_FAILURE;
   }
 
-  int ciphertext_len = plaintext_len + EVP_CIPHER_block_size(EVP_aes_256_cbc());
-  globalContext->currentUser->currentContext->crypto->ciphertext_len =
-      malloc(sizeof(int));
-  unsigned char *ciphertext = malloc(ciphertext_len);
-  globalContext->currentUser->currentContext->crypto->ciphertext = ciphertext;
-  if (ciphertext == NULL) {
+  // Allocate memory for ciphertext
+  *ciphertext = (unsigned char *)malloc(
+      plaintext_len + EVP_CIPHER_block_size(EVP_aes_256_cbc()));
+  if (*ciphertext == NULL) {
     fprintf(stderr, "Memory allocation failed for ciphertext.\n");
     EVP_CIPHER_CTX_free(ctx);
-    free((void *)plaintext);
-    free((char *)jsonEntr);
-    return -1;
+    free(*iv);
+    return EXIT_FAILURE;
   }
 
-  int len;
-  globalContext->currentUser->currentContext->crypto->len = malloc(sizeof(int));
-  if (globalContext->currentUser->currentContext->crypto->len != NULL)
-    *(globalContext->currentUser->currentContext->crypto->len) = 0;
-
-  if (1 != EVP_EncryptUpdate(ctx, ciphertext, &len, plaintext, plaintext_len)) {
-    fprintf(stderr, "Encryption update failed\n");
+  // Perform the encryption
+  if (1 !=
+      EVP_EncryptUpdate(ctx, *ciphertext, &len, plaintext, plaintext_len)) {
+    fprintf(stderr, "EVP_EncryptUpdate failed.\n");
     EVP_CIPHER_CTX_free(ctx);
-    free((void *)plaintext);
-    free(ciphertext);
-    free((char *)jsonEntr);
-    return -1;
+    free(*iv);
+    free(*ciphertext);
+    return EXIT_FAILURE;
   }
-  ciphertext_len = len;
+  total_len = len;
 
-  if (1 != EVP_EncryptFinal_ex(ctx, ciphertext + len, &len)) {
-    fprintf(stderr, "Encryption finalization failed\n");
+  // Finalize the encryption
+  if (1 != EVP_EncryptFinal_ex(ctx, *ciphertext + len, &len)) {
+    fprintf(stderr, "EVP_EncryptFinal_ex failed.\n");
     EVP_CIPHER_CTX_free(ctx);
-    free((void *)plaintext);
-    free(ciphertext);
-    free((char *)jsonEntr);
-    return -1;
+    free(*iv);
+    free(*ciphertext);
+    return EXIT_FAILURE;
   }
-  ciphertext_len += len;
-  if (globalContext->currentUser->currentContext->crypto->ciphertext_len !=
-      NULL)
-    *(globalContext->currentUser->currentContext->crypto->ciphertext_len) =
-        ciphertext_len;
+  total_len += len;
 
+  // Set the ciphertext length
+  *ciphertext_len = total_len;
+
+  // Clean up
   EVP_CIPHER_CTX_free(ctx);
-  free((void *)plaintext);
 
-  free((char *)jsonEntr);
-  return ciphertext_len;
+  return EXIT_SUCCESS;
 }
 
-int decryptData(passwordManagerContext *globalContext) {
-  /* Get ciphertext, ciphertext_len, key, and iv from
-   * globalContext->currentUser->currentContext->crypto */
-  const unsigned char *ciphertext =
-      globalContext->currentUser->currentContext->crypto->ciphertext;
-  int ciphertext_len =
-      *(globalContext->currentUser->currentContext->crypto->ciphertext_len);
-  const unsigned char *key =
-      globalContext->currentUser->currentContext->crypto->encryptionKey;
-  const unsigned char *iv =
-      globalContext->currentUser->currentContext->crypto->iv;
+int decryptData(unsigned char *ciphertext, int ciphertext_len,
+                unsigned char *key, unsigned char *iv,
+                unsigned char **plaintext, int *plaintext_len) {
+  EVP_CIPHER_CTX *ctx = NULL;
+  int len = 0;
+  int total_len = 0;
 
-  /* Allocate memory for plaintext; size can be up to ciphertext_len plus block
-   * size */
-  unsigned char *plaintext =
-      malloc(ciphertext_len + EVP_CIPHER_block_size(EVP_aes_256_cbc()));
-  if (plaintext == NULL) {
-    fprintf(stderr, "Memory allocation failed for plaintext.\n");
-    return -1;
+  // Create and initialize the context
+  ctx = EVP_CIPHER_CTX_new();
+  if (ctx == NULL) {
+    fprintf(stderr, "EVP_CIPHER_CTX_new failed.\n");
+    return EXIT_FAILURE;
   }
 
-  EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
-  int len, plaintext_len;
-  if (!ctx) {
-    fprintf(stderr, "Failed to create context\n");
-    free(plaintext);
-    return -1;
-  }
-
-  /* Initialize decryption operation */
+  // Initialize the decryption operation with AES-256-CBC
   if (1 != EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv)) {
-    fprintf(stderr, "Decryption initialization failed\n");
+    fprintf(stderr, "EVP_DecryptInit_ex failed.\n");
     EVP_CIPHER_CTX_free(ctx);
-    free(plaintext);
-    return -1;
+    return EXIT_FAILURE;
   }
 
-  /* Decrypt the ciphertext */
+  // Allocate memory for plaintext
+  *plaintext = (unsigned char *)malloc(ciphertext_len);
+  if (*plaintext == NULL) {
+    fprintf(stderr, "Memory allocation failed for plaintext.\n");
+    EVP_CIPHER_CTX_free(ctx);
+    return EXIT_FAILURE;
+  }
+
+  // Perform the decryption
   if (1 !=
-      EVP_DecryptUpdate(ctx, plaintext, &len, ciphertext, ciphertext_len)) {
-    fprintf(stderr, "Decryption update failed\n");
+      EVP_DecryptUpdate(ctx, *plaintext, &len, ciphertext, ciphertext_len)) {
+    fprintf(stderr, "EVP_DecryptUpdate failed.\n");
     EVP_CIPHER_CTX_free(ctx);
-    free(plaintext);
-    return -1;
+    free(*plaintext);
+    return EXIT_FAILURE;
   }
-  plaintext_len = len;
+  total_len = len;
 
-  /* Finalize decryption */
-  if (1 != EVP_DecryptFinal_ex(ctx, plaintext + len, &len)) {
-    fprintf(stderr, "Decryption finalization failed\n");
+  // Finalize the decryption
+  if (1 != EVP_DecryptFinal_ex(ctx, *plaintext + len, &len)) {
+    fprintf(stderr, "EVP_DecryptFinal_ex failed. Possible incorrect key or "
+                    "corrupted data.\n");
     EVP_CIPHER_CTX_free(ctx);
-    free(plaintext);
-    return -1;
+    free(*plaintext);
+    return EXIT_FAILURE;
   }
-  plaintext_len += len;
+  total_len += len;
 
+  // Set the plaintext length
+  *plaintext_len = total_len;
+
+  // Clean up
   EVP_CIPHER_CTX_free(ctx);
 
-  /* Store the resulting plaintext and its length back to globalContext */
-  globalContext->currentUser->currentContext->crypto->plaintext = plaintext;
-  globalContext->currentUser->currentContext->crypto->plaintext_len =
-      malloc(sizeof(int));
-  if (globalContext->currentUser->currentContext->crypto->plaintext_len != NULL)
-    *(globalContext->currentUser->currentContext->crypto->plaintext_len) =
-        plaintext_len;
-
-  return plaintext_len;
+  return EXIT_SUCCESS;
 }
