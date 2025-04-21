@@ -10,163 +10,166 @@
 int addUser(passwordManagerContext *globalContext) {
   char username[MAX_SIZE];
   char password[MAX_SIZE];
-  unsigned int usernameHashLen = 0;
-  unsigned int passwordHashLen = 0;
+  unsigned int ulen = 0, plen = 0;
 
-  // Prompt for username
-  printf("Enter the username: ");
+  // 1) Prompt for username/password
+  printf("Enter username: ");
   if (scanf("%49s", username) != 1) {
-    fprintf(stderr, "Error reading username.\n");
+    fprintf(stderr, "Error reading username\n");
     return EXIT_FAILURE;
   }
-
-  // Prompt for password
-  printf("Enter the password: ");
+  printf("Enter password: ");
   if (scanf("%49s", password) != 1) {
-    fprintf(stderr, "Error reading password.\n");
+    fprintf(stderr, "Error reading password\n");
     return EXIT_FAILURE;
   }
 
-  // Generate salt by concatenating username with "salt"
+  // 2) Generate salt and hashes
   char salt[MAX_SIZE + 5];
   snprintf(salt, sizeof(salt), "%ssalt", username);
 
-  // Hash username and password
-  unsigned char *usernameHash = hashIt(username, &usernameHashLen);
-  unsigned char *passwordHash = hashIt(password, &passwordHashLen);
-  if (!usernameHash || !passwordHash) {
-    fprintf(stderr, "Hashing failed.\n");
+  unsigned char *uHash = hashIt(username, &ulen);
+  unsigned char *pHash = hashIt(password, &plen);
+  if (!uHash || !pHash) {
+    fprintf(stderr, "Hashing failed\n");
+    free(uHash);
+    free(pHash);
     return EXIT_FAILURE;
   }
 
-  // Allocate and assign hashes
-  hashes *hash = malloc(sizeof(hashes));
-  if (!hash) {
-    fprintf(stderr, "Memory allocation failed for hashes.\n");
-    free(usernameHash);
-    free(passwordHash);
+  // 3) Store hashes in globalContext->currentUser->hash
+  hashes *h = malloc(sizeof(*h));
+  if (!h) {
+    perror("malloc(hashes)");
+    free(uHash);
+    free(pHash);
     return EXIT_FAILURE;
   }
-  hash->usernameHash = usernameHash;
-  hash->passwordHash = passwordHash;
-  globalContext->currentUser->hash = hash;
+  h->usernameHash = uHash;
+  h->passwordHash = pHash;
+  globalContext->currentUser->hash = h;
 
-  // Set username in global context
+  // 4) Remember the username
   globalContext->username = strdup(username);
   if (!globalContext->username) {
-    fprintf(stderr, "Memory allocation failed for username.\n");
+    perror("strdup(username)");
     return EXIT_FAILURE;
   }
 
-  // Initialize user context
-  userContext *currentContext = globalContext->currentUser->currentContext;
-  currentContext->entryCount = 0;
+  // 5) Initialize userContext
+  userContext *ctx = globalContext->currentUser->currentContext;
+  ctx->entryCount = 0;
 
-  // Derive encryption key
-  currentContext->crypto->encryptionKey =
-      deriveAesKey(passwordHash, passwordHashLen, salt);
-  if (!currentContext->crypto->encryptionKey) {
-    fprintf(stderr, "Key derivation failed.\n");
+  // 6) Derive encryption key
+  ctx->crypto->encryptionKey = deriveAesKey(pHash, plen, salt);
+  if (!ctx->crypto->encryptionKey) {
+    fprintf(stderr, "Key derivation failed\n");
     return EXIT_FAILURE;
   }
 
-  // Generate IV
-  currentContext->crypto->iv = malloc(IV_SIZE);
-  if (!currentContext->crypto->iv) {
-    fprintf(stderr, "Memory allocation failed for IV.\n");
-    return EXIT_FAILURE;
-  }
-  if (generateIV(&currentContext->crypto->iv) != EXIT_SUCCESS) {
+  // 7) Generate IV
+  //    generateIV allocates and fills *iv
+  if (generateIV(&ctx->crypto->iv) != EXIT_SUCCESS) {
     fprintf(stderr, "IV generation failed.\n");
     return EXIT_FAILURE;
   }
 
-  // Write data to file
-  if (writeData(globalContext->filePath, hash, currentContext->entryCount,
-                currentContext->crypto->iv, NULL, 0) != EXIT_SUCCESS) {
-    fprintf(stderr, "Failed to write data.\n");
+  // 8) Write header (hashes, count, iv) – no ciphertext yet
+  if (writeData(globalContext->filePath, h, ctx->entryCount, ctx->crypto->iv,
+                NULL, // no ciphertext yet
+                0) != EXIT_SUCCESS) {
+    fprintf(stderr, "Failed to write initial vault data\n");
     return EXIT_FAILURE;
   }
 
+  printf("User created successfully.\n");
   return EXIT_SUCCESS;
 }
 
 int getUser(passwordManagerContext *globalContext) {
-  char username[MAX_SIZE];
-  char password[MAX_SIZE];
-  unsigned int usernameHashLen = 0;
-  unsigned int passwordHashLen = 0;
+  char username[MAX_SIZE], password[MAX_SIZE];
+  unsigned int ulen = 0, plen = 0;
 
-  // Prompt for username
-  printf("Enter the username: ");
+  // 1) Prompt for credentials
+  printf("Enter username: ");
   if (scanf("%49s", username) != 1) {
-    fprintf(stderr, "Error reading username.\n");
+    fprintf(stderr, "Error reading username\n");
     return EXIT_FAILURE;
   }
-
-  // Prompt for password
-  printf("Enter the password: ");
+  printf("Enter password: ");
   if (scanf("%49s", password) != 1) {
-    fprintf(stderr, "Error reading password.\n");
+    fprintf(stderr, "Error reading password\n");
     return EXIT_FAILURE;
   }
 
-  // Generate salt
+  // 2) Build salt and hash the inputs
   char salt[MAX_SIZE + 5];
   snprintf(salt, sizeof(salt), "%ssalt", username);
 
-  // Hash input username and password
-  unsigned char *inputUsernameHash = hashIt(username, &usernameHashLen);
-  unsigned char *inputPasswordHash = hashIt(password, &passwordHashLen);
-  if (!inputUsernameHash || !inputPasswordHash) {
-    fprintf(stderr, "Hashing failed.\n");
+  unsigned char *uHashIn = hashIt(username, &ulen);
+  unsigned char *pHashIn = hashIt(password, &plen);
+  if (!uHashIn || !pHashIn) {
+    fprintf(stderr, "Hashing failed\n");
+    free(uHashIn);
+    free(pHashIn);
     return EXIT_FAILURE;
   }
 
-  // Allocate memory for stored hashes
-  hashes *storedHash = malloc(sizeof(hashes));
-  if (!storedHash) {
-    fprintf(stderr, "Memory allocation failed for stored hashes.\n");
-    return EXIT_FAILURE;
-  }
-  storedHash->usernameHash = malloc(DIGEST_SIZE);
-  storedHash->passwordHash = malloc(DIGEST_SIZE);
-  if (!storedHash->usernameHash || !storedHash->passwordHash) {
-    fprintf(stderr, "Memory allocation failed for hash buffers.\n");
-    return EXIT_FAILURE;
-  }
-
-  // Read data from file
-  userContext *currentContext = globalContext->currentUser->currentContext;
-  if (getData(globalContext->filePath, storedHash, &currentContext->entryCount,
-              &currentContext->crypto->iv, &currentContext->crypto->ciphertext,
-              currentContext->crypto->ciphertext_len) != EXIT_SUCCESS) {
-    fprintf(stderr, "Failed to read data.\n");
+  // 3) Read stored header into currentUser->hash
+  userContext *ctx = globalContext->currentUser->currentContext;
+  hashes *stored = globalContext->currentUser->hash;
+  // Ensure the buffers exist
+  stored->usernameHash = malloc(DIGEST_SIZE);
+  stored->passwordHash = malloc(DIGEST_SIZE);
+  if (!stored->usernameHash || !stored->passwordHash) {
+    perror("malloc(hashes)");
+    free(uHashIn);
+    free(pHashIn);
+    free(stored->usernameHash);
+    free(stored->passwordHash);
     return EXIT_FAILURE;
   }
 
-  // Compare hashes
-  if (memcmp(storedHash->usernameHash, inputUsernameHash, DIGEST_SIZE) != 0 ||
-      memcmp(storedHash->passwordHash, inputPasswordHash, DIGEST_SIZE) != 0) {
-    fprintf(stderr, "Login failed: Incorrect username or password.\n");
+  if (getData(globalContext->filePath, stored, &ctx->entryCount,
+              &ctx->crypto->iv, &ctx->crypto->ciphertext,
+              ctx->crypto->ciphertext_len) != EXIT_SUCCESS) {
+    fprintf(stderr, "Failed to load vault data\n");
+    free(uHashIn);
+    free(pHashIn);
+    free(stored->usernameHash);
+    free(stored->passwordHash);
     return EXIT_FAILURE;
   }
 
-  // Set username in global context
-  globalContext->username = strdup(username);
-  if (!globalContext->username) {
-    fprintf(stderr, "Memory allocation failed for username.\n");
+  // 4) Compare full hashes
+  if (memcmp(stored->usernameHash, uHashIn, DIGEST_SIZE) != 0 ||
+      memcmp(stored->passwordHash, pHashIn, DIGEST_SIZE) != 0) {
+    fprintf(stderr, "Login failed: incorrect credentials\n");
+    free(uHashIn);
+    free(pHashIn);
     return EXIT_FAILURE;
   }
 
-  // Derive encryption key
-  currentContext->crypto->encryptionKey =
-      deriveAesKey(inputPasswordHash, passwordHashLen, salt);
-  if (!currentContext->crypto->encryptionKey) {
-    fprintf(stderr, "Key derivation failed.\n");
+  // 5) Success: record username & derive key
+  if (!(globalContext->username = strdup(username))) {
+    perror("strdup(username)");
+    free(uHashIn);
+    free(pHashIn);
+    return EXIT_FAILURE;
+  }
+  ctx->crypto->encryptionKey = deriveAesKey(pHashIn, plen, salt);
+  if (!ctx->crypto->encryptionKey) {
+    fprintf(stderr, "Key derivation failed\n");
+    free(uHashIn);
+    free(pHashIn);
     return EXIT_FAILURE;
   }
 
-  printf("Login successful.\n");
+  printf("Login successful. %d entries loaded.\n", ctx->entryCount);
+
+  // 6) Clean up input hashes; keep stored hashes for later IO
+  free(uHashIn);
+  free(pHashIn);
+
   return EXIT_SUCCESS;
 }
