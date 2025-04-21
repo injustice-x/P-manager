@@ -11,21 +11,23 @@
 #define IV_SIZE 16
 
 int generateIV(unsigned char **iv) {
+  // 1) Allocate
   *iv = malloc(IV_SIZE);
-  if (*iv == NULL) {
+  if (!*iv) {
     fprintf(stderr, "Memory allocation failed for IV.\n");
     return EXIT_FAILURE;
   }
 
+  // 2) Fill with cryptographically secure random bytes
   if (RAND_bytes(*iv, IV_SIZE) != 1) {
     fprintf(stderr, "IV generation failed.\n");
     free(*iv);
+    *iv = NULL;
     return EXIT_FAILURE;
   }
 
   return EXIT_SUCCESS;
 }
-
 unsigned char *hashIt(char *input, unsigned int *digest_len) {
   unsigned char *digest = malloc(DIGEST_SIZE);
   if (!digest) {
@@ -96,9 +98,9 @@ unsigned char *deriveAesKey(unsigned char *master_hash, size_t hash_len,
   return aes_key;
 }
 
-int encryptData(unsigned char *plaintext, int plaintext_len, unsigned char *key,
-                unsigned char **iv, unsigned char **ciphertext,
-                int *ciphertext_len) {
+int encryptData(unsigned char *plaintext, int *plaintext_len,
+                const unsigned char *key, unsigned char **iv,
+                unsigned char **ciphertext, int *ciphertext_len) {
   EVP_CIPHER_CTX *ctx = NULL;
   int len = 0;
   int total_len = 0;
@@ -131,7 +133,7 @@ int encryptData(unsigned char *plaintext, int plaintext_len, unsigned char *key,
 
   // Allocate memory for ciphertext
   *ciphertext = (unsigned char *)malloc(
-      plaintext_len + EVP_CIPHER_block_size(EVP_aes_256_cbc()));
+      *plaintext_len + EVP_CIPHER_block_size(EVP_aes_256_cbc()));
   if (*ciphertext == NULL) {
     fprintf(stderr, "Memory allocation failed for ciphertext.\n");
     EVP_CIPHER_CTX_free(ctx);
@@ -141,7 +143,7 @@ int encryptData(unsigned char *plaintext, int plaintext_len, unsigned char *key,
 
   // Perform the encryption
   if (1 !=
-      EVP_EncryptUpdate(ctx, *ciphertext, &len, plaintext, plaintext_len)) {
+      EVP_EncryptUpdate(ctx, *ciphertext, &len, plaintext, *plaintext_len)) {
     fprintf(stderr, "EVP_EncryptUpdate failed.\n");
     EVP_CIPHER_CTX_free(ctx);
     free(*iv);
@@ -170,7 +172,7 @@ int encryptData(unsigned char *plaintext, int plaintext_len, unsigned char *key,
 }
 
 int decryptData(unsigned char *ciphertext, int ciphertext_len,
-                unsigned char *key, unsigned char *iv,
+                const unsigned char *key, unsigned char *iv,
                 unsigned char **plaintext, int *plaintext_len) {
   EVP_CIPHER_CTX *ctx = NULL;
   int len = 0;

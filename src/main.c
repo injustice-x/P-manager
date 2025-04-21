@@ -72,6 +72,8 @@ int main(int argc, char *argv[]) {
     printf("3. Search vault\n");
     printf("0. Exit\n");
 
+    cryptoContext *crypto = globalContext->currentUser->currentContext->crypto;
+
     if (scanf("%d", &choice) != 1) {
       fprintf(stderr, "Invalid input. Please enter a number.\n");
       // Clear invalid input from buffer
@@ -91,7 +93,9 @@ int main(int argc, char *argv[]) {
       }
       break;
     case 2:
-      if (encryptData(globalContext) < 0) {
+      if (encryptData(crypto->plaintext, crypto->plaintext_len, crypto->key,
+                      &crypto->iv, &crypto->ciphertext,
+                      crypto->ciphertext_len) < 0) {
         fprintf(stderr, "Encryption failed.\n");
       }
       showVault(globalContext);
