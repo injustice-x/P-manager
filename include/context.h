@@ -21,7 +21,7 @@ typedef struct {
   int *ciphertext_len;
   const unsigned char *key;
   unsigned char *iv;
-  const unsigned char *plaintext;
+  unsigned char *plaintext;
   int *len, *plaintext_len;
 } cryptoContext;
 
@@ -58,11 +58,11 @@ int addUser(passwordManagerContext *globalContext);
 int addEntry(passwordManagerContext *globalContext);
 int editEntry(passwordManagerContext *globalContext);
 int showVault(passwordManagerContext *globalContext);
-int encryptData(unsigned char *plaintext, int plaintext_len, unsigned char *key,
-                unsigned char **iv, unsigned char **ciphertext,
-                int *ciphertext_len);
+int encryptData(unsigned char *plaintext, int *plaintext_len,
+                const unsigned char *key, unsigned char **iv,
+                unsigned char **ciphertext, int *ciphertext_len);
 int decryptData(unsigned char *ciphertext, int ciphertext_len,
-                unsigned char *key, unsigned char *iv,
+                const unsigned char *key, unsigned char *iv,
                 unsigned char **plaintext, int *plaintext_len);
 void freeGlobalContext(passwordManagerContext *globalContext);
 
