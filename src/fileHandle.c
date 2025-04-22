@@ -88,99 +88,92 @@ int getData(const char *path, hashes *hash, int *entryCount, unsigned char **iv,
     return EXIT_FAILURE;
   }
 
-  // Allocate memory for usernameHash and passwordHash
-  hash->usernameHash = malloc(DIGEST_SIZE);
-  hash->passwordHash = malloc(DIGEST_SIZE);
-  if (!hash->usernameHash || !hash->passwordHash) {
-    perror("Memory allocation failed for hashes");
-    fclose(f);
-    return EXIT_FAILURE;
-  }
-
-  // Read username hash
+  // 1) Read username hash
   if (fread(hash->usernameHash, 1, DIGEST_SIZE, f) != DIGEST_SIZE) {
     fprintf(stderr, "Error reading username hash\n");
     fclose(f);
     return EXIT_FAILURE;
   }
-  fgetc(f); // Consume newline
+  fgetc(f); // consume newline
 
-  // Read password hash
+  // 2) Read password hash
   if (fread(hash->passwordHash, 1, DIGEST_SIZE, f) != DIGEST_SIZE) {
     fprintf(stderr, "Error reading password hash\n");
     fclose(f);
     return EXIT_FAILURE;
   }
-  fgetc(f); // Consume newline
+  fgetc(f);
 
-  // Read entry count
+  // 3) Read entry count
   if (fscanf(f, "%d\n", entryCount) != 1) {
     fprintf(stderr, "Error reading entry count\n");
     fclose(f);
     return EXIT_FAILURE;
   }
 
-  // Attempt to read IV
-  char iv_hex[IV_SIZE * 2 + 2] = {0}; // +2 for newline and null terminator
+  // 4) Read IV line (hex)
+  char iv_hex[IV_SIZE * 2 + 2] = {0};
   if (fgets(iv_hex, sizeof(iv_hex), f) != NULL &&
-      strlen(iv_hex) >= IV_SIZE * 2) {
+      strlen(iv_hex) >= (size_t)(IV_SIZE * 2)) {
     *iv = malloc(IV_SIZE);
-    if (*iv == NULL) {
-      fprintf(stderr, "Memory allocation failed for IV.\n");
+    if (!*iv) {
+      perror("malloc(iv) failed");
       fclose(f);
       return EXIT_FAILURE;
     }
     for (int i = 0; i < IV_SIZE; i++) {
-      sscanf(&iv_hex[i * 2], "%2hhx", &(*iv)[i]);
+      if (sscanf(&iv_hex[i * 2], "%2hhx", &(*iv)[i]) != 1) {
+        fprintf(stderr, "Error parsing IV hex\n");
+        free(*iv);
+        fclose(f);
+        return EXIT_FAILURE;
+      }
     }
   } else {
     *iv = NULL;
   }
 
-  // Determine the current position in the file
-  long current_pos = ftell(f);
-  if (current_pos == -1L) {
+  // 5) Determine ciphertext size
+  long data_start = ftell(f);
+  if (data_start < 0) {
     perror("ftell failed");
     fclose(f);
     return EXIT_FAILURE;
   }
-
-  // Move to the end to determine file size
   if (fseek(f, 0, SEEK_END) != 0) {
     perror("fseek to end failed");
     fclose(f);
     return EXIT_FAILURE;
   }
-
-  long total_size = ftell(f);
-  if (total_size == -1L) {
-    perror("ftell at end failed");
+  long total = ftell(f);
+  if (total < 0) {
+    perror("ftell end failed");
     fclose(f);
     return EXIT_FAILURE;
   }
+  long size = total - data_start;
 
-  // Calculate the size of the ciphertext
-  long dataSize = total_size - current_pos;
-  if (dataSize > 0) {
-    *cipherText = malloc(dataSize);
-    if (*cipherText == NULL) {
-      fprintf(stderr, "Memory allocation failed for ciphertext.\n");
+  // 6) Read ciphertext if any
+  if (size > 0) {
+    *cipherText = malloc(size);
+    if (!*cipherText) {
+      perror("malloc(cipherText) failed");
       fclose(f);
       return EXIT_FAILURE;
     }
-    if (fseek(f, current_pos, SEEK_SET) != 0) {
-      perror("fseek back to data failed");
+    if (fseek(f, data_start, SEEK_SET) != 0) {
+      perror("fseek back failed");
       free(*cipherText);
       fclose(f);
       return EXIT_FAILURE;
     }
-    if (fread(*cipherText, 1, dataSize, f) != (size_t)dataSize) {
-      fprintf(stderr, "Error reading ciphertext data\n");
+    if (fread(*cipherText, 1, size, f) != (size_t)size) {
+      fprintf(stderr, "Error reading ciphertext\n");
       free(*cipherText);
       fclose(f);
       return EXIT_FAILURE;
     }
-    *ciphertext_len = (int)dataSize;
+    *ciphertext_len = (int)size;
   } else {
     *cipherText = NULL;
     *ciphertext_len = 0;
