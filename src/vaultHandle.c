@@ -33,12 +33,12 @@ int showVault(passwordManagerContext *globalContext) {
   if (context->entries == NULL) {
     if (getData(globalContext->filePath, globalContext->currentUser->hash,
                 &context->entryCount, &crypto->iv, &crypto->ciphertext,
-                crypto->ciphertext_len) != EXIT_SUCCESS) {
+                &crypto->ciphertext_len) != EXIT_SUCCESS) {
       fprintf(stderr, "Failed to read vault data\n");
       return EXIT_FAILURE;
     }
 
-    if (decryptData(crypto->ciphertext, *crypto->ciphertext_len,
+    if (decryptData(crypto->ciphertext, crypto->ciphertext_len,
                     crypto->encryptionKey, // use encryptionKey field
                     crypto->iv, &crypto->plaintext,
                     crypto->plaintext_len) != EXIT_SUCCESS) {
@@ -86,7 +86,7 @@ int addEntry(passwordManagerContext *globalContext) {
   userContext *context = globalContext->currentUser->currentContext;
   cryptoContext *crypto = context->crypto;
 
-  // Expand entries array
+  // 1) Expand entries array
   int newSize = context->entryCount + 1;
   entry *tmp = realloc(context->entries, newSize * sizeof(entry));
   if (!tmp) {
@@ -96,7 +96,7 @@ int addEntry(passwordManagerContext *globalContext) {
   context->entries = tmp;
   entry *e = &context->entries[context->entryCount];
 
-  // Allocate fields
+  // 2) Allocate the new entry fields
   e->name = malloc(MAX_NAME_LEN);
   e->username = malloc(MAX_USERNAME_LEN);
   e->password = malloc(MAX_PASSWORD_LEN);
@@ -110,7 +110,7 @@ int addEntry(passwordManagerContext *globalContext) {
     return EXIT_FAILURE;
   }
 
-  // **No flush_stdin() here**—main() has already cleared the '\n'
+  // 3) Read user input
   printf("Enter name: ");
   if (!fgets(e->name, MAX_NAME_LEN, stdin))
     goto fail_input;
@@ -131,9 +131,10 @@ int addEntry(passwordManagerContext *globalContext) {
     goto fail_input;
   e->website[strcspn(e->website, "\n")] = '\0';
 
+  // 4) Increment entry count
   context->entryCount++;
 
-  // Serialize to JSON
+  // 5) Serialize to JSON plaintext
   free(crypto->plaintext);
   crypto->plaintext = (unsigned char *)jsonEntries(
       context->entries, globalContext->username, context->entryCount);
@@ -141,23 +142,22 @@ int addEntry(passwordManagerContext *globalContext) {
     fprintf(stderr, "Failed to serialize entries to JSON\n");
     return EXIT_FAILURE;
   }
-
-  // **Fix: store length into the int, not pointer**
-  *(crypto->plaintext_len) = (int)strlen((char *)crypto->plaintext);
-
-  // Encrypt updated plaintext
+  // store length in the int pointed to by plaintext_len
+  *crypto->plaintext_len = strlen((char *)crypto->plaintext);
+  *crypto->plaintext_len = strlen((char *)crypto->plaintext);
+  // 6) Encrypt updated plaintext
   free(crypto->ciphertext);
-  if (encryptData(crypto->plaintext, (crypto->plaintext_len),
+  if (encryptData(crypto->plaintext, crypto->plaintext_len,
                   crypto->encryptionKey, &crypto->iv, &crypto->ciphertext,
-                  crypto->ciphertext_len) < 0) {
+                  &crypto->ciphertext_len) != EXIT_SUCCESS) {
     fprintf(stderr, "Encryption failed\n");
     return EXIT_FAILURE;
   }
 
-  // Write out everything
+  // 7) Write out hashes, count, IV, and ciphertext
   if (writeData(globalContext->filePath, globalContext->currentUser->hash,
                 context->entryCount, crypto->iv, crypto->ciphertext,
-                (crypto->ciphertext_len)) != EXIT_SUCCESS) {
+                &crypto->ciphertext_len) != EXIT_SUCCESS) {
     fprintf(stderr, "Failed to write data to file\n");
     return EXIT_FAILURE;
   }
