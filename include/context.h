@@ -18,7 +18,7 @@ typedef struct {
 typedef struct {
   unsigned char *encryptionKey;
   unsigned char *ciphertext;
-  int *ciphertext_len;
+  int ciphertext_len;
   const unsigned char *key;
   unsigned char *iv;
   unsigned char *plaintext;
