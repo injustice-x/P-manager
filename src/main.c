@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
     }
   } else {
     if (getUser(globalContext) == 1) {
-      printf("Couldn't get User from File\n");
+      printf("\n");
       freeGlobalContext(globalContext);
       free(filePath);
       free(dataFilePath);
@@ -95,7 +95,7 @@ int main(int argc, char *argv[]) {
     case 2:
       if (encryptData(crypto->plaintext, crypto->plaintext_len, crypto->key,
                       &crypto->iv, &crypto->ciphertext,
-                      crypto->ciphertext_len) < 0) {
+                      &crypto->ciphertext_len) < 0) {
         fprintf(stderr, "Encryption failed.\n");
       }
       showVault(globalContext);
