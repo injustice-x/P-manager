@@ -132,7 +132,7 @@ int getUser(passwordManagerContext *globalContext) {
 
   if (getData(globalContext->filePath, stored, &ctx->entryCount,
               &ctx->crypto->iv, &ctx->crypto->ciphertext,
-              ctx->crypto->ciphertext_len) != EXIT_SUCCESS) {
+              &ctx->crypto->ciphertext_len) != EXIT_SUCCESS) {
     fprintf(stderr, "Failed to load vault data\n");
     free(uHashIn);
     free(pHashIn);
