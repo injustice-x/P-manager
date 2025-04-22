@@ -50,13 +50,13 @@ passwordManagerContext *initPasswordManagerContext(const char *dataFilePath) {
   globalContext->currentUser->currentContext->crypto->plaintext = NULL;
   globalContext->currentUser->currentContext->crypto->ciphertext = NULL;
   globalContext->currentUser->currentContext->crypto->plaintext_len = NULL;
-  globalContext->currentUser->currentContext->crypto->ciphertext_len = NULL;
   globalContext->currentUser->currentContext->crypto->len = NULL;
 
   /* Initialize entry count and entries pointer */
   globalContext->currentUser->currentContext->entryCount = 0;
   globalContext->currentUser->currentContext->entries = NULL;
-
+  globalContext->currentUser->currentContext->crypto->plaintext_len =
+      malloc(sizeof(int));
   return globalContext;
 }
 
@@ -74,14 +74,12 @@ void freeGlobalContext(passwordManagerContext *globalContext) {
     if (globalContext->currentUser->currentContext) {
       if (globalContext->currentUser->currentContext->crypto) {
         free(globalContext->currentUser->currentContext->crypto->encryptionKey);
-        free((void *)globalContext->currentUser->currentContext->crypto->iv);
+        free(globalContext->currentUser->currentContext->crypto->iv);
         free((void *)
                  globalContext->currentUser->currentContext->crypto->plaintext);
         free((void *)globalContext->currentUser->currentContext->crypto
                  ->ciphertext);
         free(globalContext->currentUser->currentContext->crypto->plaintext_len);
-        free(
-            globalContext->currentUser->currentContext->crypto->ciphertext_len);
         free(globalContext->currentUser->currentContext->crypto->len);
         free(globalContext->currentUser->currentContext->crypto);
       }
