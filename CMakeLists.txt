@@ -9,21 +9,13 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 find_package(OpenSSL REQUIRED)
 find_package(cJSON REQUIRED)
 
+add_compile_options(-g)
 # Add the include directories for OpenSSL
 include_directories(${OPENSSL_INCLUDE_DIR})
 
-# # Specify the source files
-# set(SOURCES
-#     ${PROJECT_SOURCE_DIR}/src/main.c
-#     ${PROJECT_SOURCE_DIR}/src/context.c
-#     ${PROJECT_SOURCE_DIR}/src/authHandle.c
-#     ${PROJECT_SOURCE_DIR}/src/jsonHandle.c
-# )
-#
-# # Add the executable target
 # add_executable(main ${SOURCES})
 add_executable(testJson test/jsonTest.c src/jsonHandle.c)
-add_executable(main src/main.c src/context.c src/fileHandle.c src/authHandle.c src/cryptoHandle.c src/jsonHandle.c src/vaultHandle.c)
+add_executable(main src/main.c src/context.c src/fileHandle.c src/authHandle.c src/cryptoHandle.c src/jsonHandle.c src/vaultHandle.c )
 
 # Link the OpenSSL crypto library
 target_link_libraries(testJson PRIVATE cjson)
