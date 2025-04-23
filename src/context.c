@@ -75,8 +75,11 @@ void freeGlobalContext(passwordManagerContext *globalContext) {
       if (globalContext->currentUser->currentContext->crypto) {
         free(globalContext->currentUser->currentContext->crypto->encryptionKey);
         free(globalContext->currentUser->currentContext->crypto->iv);
-        free((void *)
-                 globalContext->currentUser->currentContext->crypto->plaintext);
+        if (globalContext->currentUser->currentContext->crypto->plaintext !=
+            NULL) {
+          free((void *)globalContext->currentUser->currentContext->crypto
+                   ->plaintext);
+        }
         free((void *)globalContext->currentUser->currentContext->crypto
                  ->ciphertext);
         free(globalContext->currentUser->currentContext->crypto->plaintext_len);

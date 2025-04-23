@@ -93,11 +93,6 @@ int main(int argc, char *argv[]) {
       }
       break;
     case 2:
-      if (encryptData(crypto->plaintext, crypto->plaintext_len, crypto->key,
-                      &crypto->iv, &crypto->ciphertext,
-                      &crypto->ciphertext_len) < 0) {
-        fprintf(stderr, "Encryption failed.\n");
-      }
       showVault(globalContext);
       break;
     case 3:
