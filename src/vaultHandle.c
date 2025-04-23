@@ -144,7 +144,6 @@ int addEntry(passwordManagerContext *globalContext) {
   }
   // store length in the int pointed to by plaintext_len
   *crypto->plaintext_len = strlen((char *)crypto->plaintext);
-  *crypto->plaintext_len = strlen((char *)crypto->plaintext);
   // 6) Encrypt updated plaintext
   free(crypto->ciphertext);
   if (encryptData(crypto->plaintext, crypto->plaintext_len,
