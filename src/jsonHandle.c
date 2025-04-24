@@ -6,6 +6,60 @@
 #include <string.h>
 #include <strings.h>
 
+char *jsonEntries(entry *entries, const char *name, int entryCount) {
+  char *out = NULL;
+  cJSON *root = NULL;
+  cJSON *arr = NULL;
+  cJSON *item = NULL;
+
+  // 1) Create root object
+  root = cJSON_CreateObject();
+  if (!root) {
+    goto cleanup;
+  }
+
+  // 2) Add username
+  if (!cJSON_AddStringToObject(root, "username", name)) {
+    goto cleanup;
+  }
+
+  // 3) Add Entries array
+  arr = cJSON_AddArrayToObject(root, "Entries");
+  if (!arr) {
+    goto cleanup;
+  }
+
+  // 4) Populate array if any entries
+  for (int i = 0; i < entryCount; ++i) {
+    item = cJSON_CreateObject();
+    if (!item) {
+      goto cleanup;
+    }
+    if (!cJSON_AddStringToObject(item, "website", entries[i].website) ||
+        !cJSON_AddStringToObject(item, "name", entries[i].name) ||
+        !cJSON_AddStringToObject(item, "username", entries[i].username) ||
+        !cJSON_AddStringToObject(item, "password", entries[i].password)) {
+      cJSON_Delete(item);
+      goto cleanup;
+    }
+    cJSON_AddItemToArray(arr, item);
+    item = NULL; // ownership transferred
+  }
+
+  // 5) Print JSON
+  out = cJSON_PrintUnformatted(root);
+  if (!out) {
+    goto cleanup;
+  }
+
+cleanup:
+  // 6) Clean up cJSON tree
+  if (root) {
+    cJSON_Delete(root);
+  }
+  // 7) Return printed JSON (may be NULL on error)
+  return out;
+}
 entry *unJsonEntries(char *jsonString, int *numEntries) {
   entry *jEntry;
   cJSON *jString = cJSON_Parse(jsonString);
@@ -64,48 +118,4 @@ entry *unJsonEntries(char *jsonString, int *numEntries) {
   // Free the JSON structure as we have copied the needed values.
   cJSON_Delete(jString);
   return jEntry;
-}
-
-char *jsonEntries(entry *entries, const char *name, int entryCount) {
-
-  char *jsonString;
-  cJSON *entriesTemp = NULL;
-  cJSON *jsonEntry = cJSON_CreateObject();
-  if (cJSON_AddStringToObject(jsonEntry, "username", name) == NULL) {
-    printf("1\n");
-    return NULL;
-  }
-  entriesTemp = cJSON_AddArrayToObject(jsonEntry, "Entries");
-  if (entriesTemp == NULL) {
-    printf("2\n");
-    return NULL;
-  }
-
-  if (entryCount == 0) {
-    jsonString = cJSON_Print(jsonEntry);
-
-    return jsonString;
-  }
-  for (size_t i = 0; i < entryCount; ++i) {
-    cJSON *entry = cJSON_CreateObject();
-    if (cJSON_AddStringToObject(entry, "website", entries[i].website) == NULL) {
-      return NULL;
-    }
-    if (cJSON_AddStringToObject(entry, "name", entries[i].name) == NULL) {
-      return NULL;
-    }
-    if (cJSON_AddStringToObject(entry, "username", entries[i].username) ==
-        NULL) {
-      return NULL;
-    }
-    if (cJSON_AddStringToObject(entry, "password", entries[i].password) ==
-        NULL) {
-      return NULL;
-    }
-    cJSON_AddItemToArray(entriesTemp, entry);
-  }
-  jsonString = cJSON_Print(jsonEntry);
-
-  cJSON_Delete(jsonEntry);
-  return jsonString;
 }
