@@ -14,9 +14,7 @@ add_compile_options(-g)
 include_directories(${OPENSSL_INCLUDE_DIR})
 
 # add_executable(main ${SOURCES})
-add_executable(testJson test/jsonTest.c src/jsonHandle.c)
 add_executable(main src/main.c src/context.c src/fileHandle.c src/authHandle.c src/cryptoHandle.c src/jsonHandle.c src/vaultHandle.c )
 
 # Link the OpenSSL crypto library
-target_link_libraries(testJson PRIVATE cjson)
 target_link_libraries(main OpenSSL::Crypto cjson)
