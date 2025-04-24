@@ -8,17 +8,124 @@
 #define MAX_PASSWORD_LEN 100
 #define MAX_WEBSITE_LEN 100
 
-// Helper to flush leftover newline from stdin
-static void flush_stdin(void) {
-  int c;
-  while ((c = getchar()) != EOF && c != '\n')
-    ;
+int addEntry(passwordManagerContext *globalContext) {
+  if (!globalContext || !globalContext->currentUser ||
+      !globalContext->currentUser->currentContext) {
+    fprintf(stderr, "Invalid global context\n");
+    return EXIT_FAILURE;
+  }
+
+  userContext *ctx = globalContext->currentUser->currentContext;
+  cryptoContext *crypto = ctx->crypto;
+  entry *oldEntries = ctx->entries;
+  int oldCount = ctx->entryCount;
+
+  // 1) Safely expand entries array
+  entry *newEntries = realloc(ctx->entries, (oldCount + 1) * sizeof(entry));
+  if (!newEntries) {
+    perror("Realloc failed");
+    return EXIT_FAILURE; // original entries intact
+                         // :contentReference[oaicite:5]{index=5}
+  }
+  ctx->entries = newEntries;
+  entry *e = &ctx->entries[oldCount];
+
+  // 2) Allocate fields for new entry
+  e->name = malloc(MAX_NAME_LEN);
+  e->username = malloc(MAX_USERNAME_LEN);
+  e->password = malloc(MAX_PASSWORD_LEN);
+  e->website = malloc(MAX_WEBSITE_LEN);
+  if (!e->name || !e->username || !e->password || !e->website) {
+    perror("Allocation failed");
+    goto cleanup_alloc; // free nothing yet, rollback below
+                        // :contentReference[oaicite:6]{index=6}
+  }
+
+  // 3) Read user input
+  printf("Enter name: ");
+  if (!fgets(e->name, MAX_NAME_LEN, stdin))
+    goto fail_input;
+  e->name[strcspn(e->name, "\n")] = '\0';
+
+  printf("Enter username: ");
+  if (!fgets(e->username, MAX_USERNAME_LEN, stdin))
+    goto fail_input;
+  e->username[strcspn(e->username, "\n")] = '\0';
+
+  printf("Enter password: ");
+  if (!fgets(e->password, MAX_PASSWORD_LEN, stdin))
+    goto fail_input;
+  e->password[strcspn(e->password, "\n")] = '\0';
+
+  printf("Enter website: ");
+  if (!fgets(e->website, MAX_WEBSITE_LEN, stdin))
+    goto fail_input;
+  e->website[strcspn(e->website, "\n")] = '\0';
+  // 4) Serialize to JSON plaintext
+  unsigned char *json = (unsigned char *)jsonEntries(
+      ctx->entries, globalContext->username, oldCount + 1);
+  if (!json) {
+    fprintf(stderr, "JSON serialization failed\n");
+    goto cleanup_fields;
+  }
+  free(crypto->plaintext);
+  crypto->plaintext = json;
+  *crypto->plaintext_len =
+      strlen((char *)json); // safe because null-terminated
+                            // :contentReference[oaicite:8]{index=8}
+
+  // 5) Encrypt and securely erase plaintext
+  if (encryptData(crypto->plaintext, crypto->plaintext_len,
+                  crypto->encryptionKey, &crypto->iv, &crypto->ciphertext,
+                  &crypto->ciphertext_len) != EXIT_SUCCESS) {
+    fprintf(stderr, "Encryption failed\n");
+    goto cleanup_json;
+  }
+  explicit_bzero(
+      crypto->plaintext,
+      *crypto->plaintext_len); // prevents residual data
+                               // :contentReference[oaicite:9]{index=9}
+
+  // 6) Write out hashes, count, IV, and ciphertext
+  if (writeData(globalContext->filePath, globalContext->currentUser->hash,
+                oldCount + 1, crypto->iv, crypto->ciphertext,
+                &crypto->ciphertext_len) != EXIT_SUCCESS) {
+    fprintf(stderr, "Write failed\n");
+    goto cleanup_cipher;
+  }
+
+  ctx->entryCount++;
+  return EXIT_SUCCESS;
+
+// Cleanup on write failure
+cleanup_cipher:
+  free(crypto->ciphertext);
+
+// Cleanup on serialization or encryption failure
+cleanup_json:
+  free(crypto->plaintext);
+
+// Cleanup on input or allocation failure for fields
+cleanup_fields:
+  free(e->name);
+  free(e->username);
+  explicit_bzero(e->password, strlen(e->password));
+  free(e->password);
+  free(e->website);
+
+// Roll back array expansion
+cleanup_alloc:
+  ctx->entries = oldEntries;
+  return EXIT_FAILURE;
+fail_input:
+  fprintf(stderr, "Error reading input\n");
+  free(e->name);
+  free(e->username);
+  free(e->password);
+  free(e->website);
+  return EXIT_FAILURE;
 }
 
-/**
- * showVault: Decrypts the stored ciphertext, parses JSON entries, and prints
- * them.
- */
 int showVault(passwordManagerContext *globalContext) {
   if (!globalContext || !globalContext->currentUser ||
       !globalContext->currentUser->currentContext) {
@@ -71,103 +178,4 @@ int showVault(passwordManagerContext *globalContext) {
   }
 
   return EXIT_SUCCESS;
-}
-
-/**
- * addEntry: Prompts for a new entry, appends it, re‑encrypts, and writes back.
- */
-int addEntry(passwordManagerContext *globalContext) {
-  if (!globalContext || !globalContext->currentUser ||
-      !globalContext->currentUser->currentContext) {
-    fprintf(stderr, "Invalid global context\n");
-    return EXIT_FAILURE;
-  }
-
-  userContext *context = globalContext->currentUser->currentContext;
-  cryptoContext *crypto = context->crypto;
-
-  // 1) Expand entries array
-  int newSize = context->entryCount + 1;
-  entry *tmp = realloc(context->entries, newSize * sizeof(entry));
-  if (!tmp) {
-    perror("Memory reallocation failed");
-    return EXIT_FAILURE;
-  }
-  context->entries = tmp;
-  entry *e = &context->entries[context->entryCount];
-
-  // 2) Allocate the new entry fields
-  e->name = malloc(MAX_NAME_LEN);
-  e->username = malloc(MAX_USERNAME_LEN);
-  e->password = malloc(MAX_PASSWORD_LEN);
-  e->website = malloc(MAX_WEBSITE_LEN);
-  if (!e->name || !e->username || !e->password || !e->website) {
-    perror("Allocation failed for new entry");
-    free(e->name);
-    free(e->username);
-    free(e->password);
-    free(e->website);
-    return EXIT_FAILURE;
-  }
-
-  // 3) Read user input
-  printf("Enter name: ");
-  if (!fgets(e->name, MAX_NAME_LEN, stdin))
-    goto fail_input;
-  e->name[strcspn(e->name, "\n")] = '\0';
-
-  printf("Enter username: ");
-  if (!fgets(e->username, MAX_USERNAME_LEN, stdin))
-    goto fail_input;
-  e->username[strcspn(e->username, "\n")] = '\0';
-
-  printf("Enter password: ");
-  if (!fgets(e->password, MAX_PASSWORD_LEN, stdin))
-    goto fail_input;
-  e->password[strcspn(e->password, "\n")] = '\0';
-
-  printf("Enter website: ");
-  if (!fgets(e->website, MAX_WEBSITE_LEN, stdin))
-    goto fail_input;
-  e->website[strcspn(e->website, "\n")] = '\0';
-
-  // 4) Increment entry count
-  context->entryCount++;
-
-  // 5) Serialize to JSON plaintext
-  free(crypto->plaintext);
-  crypto->plaintext = (unsigned char *)jsonEntries(
-      context->entries, globalContext->username, context->entryCount);
-  if (!crypto->plaintext) {
-    fprintf(stderr, "Failed to serialize entries to JSON\n");
-    return EXIT_FAILURE;
-  }
-  // store length in the int pointed to by plaintext_len
-  *crypto->plaintext_len = strlen((char *)crypto->plaintext);
-  // 6) Encrypt updated plaintext
-  free(crypto->ciphertext);
-  if (encryptData(crypto->plaintext, crypto->plaintext_len,
-                  crypto->encryptionKey, &crypto->iv, &crypto->ciphertext,
-                  &crypto->ciphertext_len) != EXIT_SUCCESS) {
-    fprintf(stderr, "Encryption failed\n");
-    return EXIT_FAILURE;
-  }
-
-  // 7) Write out hashes, count, IV, and ciphertext
-  if (writeData(globalContext->filePath, globalContext->currentUser->hash,
-                context->entryCount, crypto->iv, crypto->ciphertext,
-                &crypto->ciphertext_len) != EXIT_SUCCESS) {
-    fprintf(stderr, "Failed to write data to file\n");
-    return EXIT_FAILURE;
-  }
-
-  return EXIT_SUCCESS;
-
-fail_input:
-  fprintf(stderr, "Error reading input\n");
-  free(e->name);
-  free(e->username);
-  free(e->password);
-  free(e->website);
-  return EXIT_FAILURE;
 }
