@@ -60,6 +60,32 @@ passwordManagerContext *initPasswordManagerContext(const char *dataFilePath) {
   return globalContext;
 }
 
+int loadEntries(passwordManagerContext *globalContext) {
+
+  userContext *ctx = globalContext->currentUser->currentContext;
+  cryptoContext *crypto = ctx->crypto;
+  if (getData(globalContext->filePath, globalContext->currentUser->hash,
+              &ctx->entryCount, &crypto->iv, &crypto->ciphertext,
+              &crypto->ciphertext_len) != EXIT_SUCCESS) {
+    fprintf(stderr, "Failed to read vault data\n");
+    return EXIT_FAILURE;
+  }
+  if (decryptData(crypto->ciphertext, crypto->ciphertext_len,
+                  crypto->encryptionKey, crypto->iv, &crypto->plaintext,
+                  crypto->plaintext_len) != EXIT_SUCCESS) {
+    fprintf(stderr, "Decryption failed\n");
+    return EXIT_FAILURE;
+  }
+  ctx->entries = unJsonEntries((char *)crypto->plaintext, &ctx->entryCount);
+
+  if (!ctx->entries && ctx->entryCount > 0) {
+    fprintf(stderr, "Failed to parse JSON entries\n");
+    return EXIT_FAILURE;
+  }
+
+  return EXIT_SUCCESS;
+}
+
 void freeGlobalContext(passwordManagerContext *globalContext) {
   if (globalContext == NULL)
     return;
