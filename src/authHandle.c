@@ -141,6 +141,7 @@ int getUser(passwordManagerContext *globalContext) {
     return EXIT_FAILURE;
   }
 
+  cryptoContext *crypto = ctx->crypto;
   // 4) Compare full hashes
   if (memcmp(stored->usernameHash, uHashIn, DIGEST_SIZE) != 0 ||
       memcmp(stored->passwordHash, pHashIn, DIGEST_SIZE) != 0) {
@@ -165,6 +166,14 @@ int getUser(passwordManagerContext *globalContext) {
     return EXIT_FAILURE;
   }
 
+  if (decryptData(crypto->ciphertext, crypto->ciphertext_len,
+                  crypto->encryptionKey, // use encryptionKey field
+                  crypto->iv, &crypto->plaintext,
+                  crypto->plaintext_len) != EXIT_SUCCESS) {
+    fprintf(stderr, "Decryption failed\n");
+    free(crypto->ciphertext);
+    return EXIT_FAILURE;
+  }
   printf("Login successful. %d entries loaded.\n", ctx->entryCount);
 
   // 6) Clean up input hashes; keep stored hashes for later IO
