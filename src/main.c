@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <unistd.h>
 
 #define MAX_SIZE 50
@@ -69,9 +70,11 @@ int main(int argc, char *argv[]) {
     printf("Select from below:\n");
     printf("1. Add new item\n");
     printf("2. View vault\n");
-    printf("3. Search vault\n");
+    printf("3. Edit vault\n");
+    printf("4. Search vault\n");
     printf("0. Exit\n");
 
+    userContext *ctx = globalContext->currentUser->currentContext;
     cryptoContext *crypto = globalContext->currentUser->currentContext->crypto;
 
     if (scanf("%d", &choice) != 1) {
@@ -87,7 +90,6 @@ int main(int argc, char *argv[]) {
 
     switch (choice) {
     case 1:
-      // Call addEntry to add a new item.
       if (addEntry(globalContext) != 0) {
         fprintf(stderr, "Failed to add new entry.\n");
       }
@@ -96,6 +98,17 @@ int main(int argc, char *argv[]) {
       showVault(globalContext);
       break;
     case 3:
+      showVault(globalContext);
+      int index;
+      printf("Enter the index of the entry you want to edit:");
+      scanf("%d\n", &index);
+      if (index > ctx->entryCount) {
+        printf("Index shouldn'c exceed the total entry count!!\nEnter again:");
+        scanf("%d\n", &index);
+      }
+      ctx->entries = editEntry(ctx->entries, ctx->entryCount, index);
+      break;
+    case 4:
       break;
     case 0:
       printf("Exiting...\n");
