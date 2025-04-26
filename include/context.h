@@ -52,10 +52,12 @@ extern user *currentUser;
 
 /*main functions*/
 passwordManagerContext *initPasswordManagerContext(const char *dataFilePath);
+int loadEntries(passwordManagerContext *globalContext);
 int getUser(passwordManagerContext *globalContext);
 int addUser(passwordManagerContext *globalContext);
 int addEntry(passwordManagerContext *globalContext);
-entry *editEntry(entry *entries, int entryCount, int index);
+int editEntry(entry **entries, int entryCount, int index);
+int searchEntry(entry *entries, int entryCount);
 int showVault(passwordManagerContext *globalContext);
 int encryptData(unsigned char *plaintext, int *plaintext_len,
                 const unsigned char *key, unsigned char **iv,
