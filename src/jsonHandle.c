@@ -60,6 +60,7 @@ cleanup:
   // 7) Return printed JSON (may be NULL on error)
   return out;
 }
+
 entry *unJsonEntries(char *jsonString, int *numEntries) {
   entry *jEntry;
   cJSON *jString = cJSON_Parse(jsonString);
