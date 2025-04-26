@@ -185,57 +185,134 @@ int showVault(passwordManagerContext *globalContext) {
   return EXIT_SUCCESS;
 }
 
-entry *editEntry(entry *entries, int entryCount, int index) {
-  entry *temp = malloc(sizeof(entry) * entryCount);
+int editEntry(entry **entries, int entryCount, int index) {
+  if (entries == NULL) {
+    fprintf(stderr, "Error: entries pointer is NULL\n");
+    return -1;
+  }
+  if (index < 0 || index >= entryCount) {
+    fprintf(stderr, "Error: index %d out of bounds\n", index);
+    return -1;
+  }
 
-  for (int i = 0; i < entryCount; i++) {
+  entry *e = entries[index];
+  if (e == NULL) {
+    fprintf(stderr, "Error: entry[%d] is NULL\n", index);
+    return -1;
+  }
 
-    temp[i].name = malloc(MAX_NAME_LEN);
-    temp[i].username = malloc(MAX_USERNAME_LEN);
-    temp[i].password = malloc(MAX_PASSWORD_LEN);
-    temp[i].website = malloc(MAX_WEBSITE_LEN);
+  char buffer[MAX_WEBSITE_LEN];
+  int ch;
 
-    if (i == index) {
-      printf("old entry data:\n");
-      printf("\tname:");
-      if (!fgets(temp[i].name, MAX_NAME_LEN, stdin)) {
-        fprintf(stderr, "Error reading name\n");
-        goto fail;
-      }
-      temp[i].name[strcspn(temp[i].name, "\n")] = '\0';
+  // Flush any leftover newline before the first fgets
+  while ((ch = getchar()) != '\n' && ch != EOF) {
+  }
 
-      printf("\twebsite:");
-      if (!fgets(temp[i].website, MAX_WEBSITE_LEN, stdin)) {
-        fprintf(stderr, "Error reading website\n");
-        goto fail;
-      }
-      temp[i].website[strcspn(temp[i].website, "\n")] = '\0';
-
-      printf("\tusername:");
-      if (!fgets(temp[i].username, MAX_USERNAME_LEN, stdin)) {
-        fprintf(stderr, "Error reading username\n");
-        goto fail;
-      }
-      temp[i].username[strcspn(temp[i].username, "\n")] = '\0';
-
-      printf("\tpassword:");
-      if (!fgets(temp[i].password, MAX_PASSWORD_LEN, stdin)) {
-        fprintf(stderr, "Error reading password\n");
-        goto fail;
-      }
-      temp[i].password[strcspn(temp[i].password, "\n")] = '\0';
+  // Prompt for each field, read into the pre‐allocated buffer pointers
+  printf("Enter name [%s]: ", e->name);
+  if (fgets(buffer, MAX_NAME_LEN, stdin)) {
+    buffer[strcspn(buffer, "\r\n")] = '\0';
+    if (buffer[0] != '\0') {
+      strncpy(e->name, buffer, MAX_NAME_LEN - 1);
+      e->name[MAX_NAME_LEN - 1] = '\0';
     }
+  } else {
+    fprintf(stderr, "Error reading name\n");
+    return -1;
+  }
 
-    else {
-      temp[i].name = entries[i].name;
-      temp[i].username = entries[i].username;
-      temp[i].password = entries[i].password;
-      temp[i].website = entries[i].website;
+  printf("Enter username [%s]: ", e->username);
+  if (fgets(buffer, MAX_USERNAME_LEN, stdin)) {
+    buffer[strcspn(buffer, "\r\n")] = '\0';
+    if (buffer[0] != '\0') {
+      strncpy(e->username, buffer, MAX_USERNAME_LEN - 1);
+      e->username[MAX_USERNAME_LEN - 1] = '\0';
+    }
+  } else {
+    fprintf(stderr, "Error reading username\n");
+    return -1;
+  }
+
+  printf("Enter password [%s]: ", e->password);
+  if (fgets(buffer, MAX_PASSWORD_LEN, stdin)) {
+    buffer[strcspn(buffer, "\r\n")] = '\0';
+    if (buffer[0] != '\0') {
+      strncpy(e->password, buffer, MAX_PASSWORD_LEN - 1);
+      e->password[MAX_PASSWORD_LEN - 1] = '\0';
+    }
+  } else {
+    fprintf(stderr, "Error reading password\n");
+    return -1;
+  }
+
+  printf("Enter website [%s]: ", e->website);
+  if (fgets(buffer, MAX_WEBSITE_LEN, stdin)) {
+    buffer[strcspn(buffer, "\r\n")] = '\0';
+    if (buffer[0] != '\0') {
+      strncpy(e->website, buffer, MAX_WEBSITE_LEN - 1);
+      e->website[MAX_WEBSITE_LEN - 1] = '\0';
+    }
+  } else {
+    fprintf(stderr, "Error reading website\n");
+    return -1;
+  }
+
+  return 0;
+}
+int searchEntry(entry *entries, int entryCount) {
+  char searchTerm[MAX_NAME_LEN];
+  int editEntr = 0;
+
+  printf("Enter the term to search vault: ");
+  if (!fgets(searchTerm, sizeof(searchTerm), stdin)) {
+    fprintf(stderr, "Failed to read searchTerm\n");
+    return EXIT_FAILURE;
+  }
+  // Remove trailing newline character
+  searchTerm[strcspn(searchTerm, "\n")] = '\0';
+
+  printf("Results:\n");
+  int found = 0;
+  for (int i = 0; i < entryCount; i++) {
+    if ((entries[i].name && strstr(entries[i].name, searchTerm)) ||
+        (entries[i].username && strstr(entries[i].username, searchTerm)) ||
+        (entries[i].website && strstr(entries[i].website, searchTerm)) ||
+        (entries[i].password && strstr(entries[i].password, searchTerm))) {
+      printf("\t%d:\n", i + 1);
+      printf("\t\tName: %s\n", entries[i].name ? entries[i].name : "N/A");
+      printf("\t\tWebsite: %s\n",
+             entries[i].website ? entries[i].website : "N/A");
+      printf("\t\tUsername: %s\n",
+             entries[i].username ? entries[i].username : "N/A");
+      printf("\t\tPassword: %s\n",
+             entries[i].password ? entries[i].password : "N/A");
+      found = 1;
     }
   }
-  return temp;
 
-fail:
-  fprintf(stderr, "coudn't read input\n");
-  return entries;
+  if (!found) {
+    printf("No matching entries found.\n");
+    return EXIT_SUCCESS;
+  }
+
+  printf(
+      "To edit an entry, please enter its index number (0 to exit search): ");
+  char input[10];
+  if (!fgets(input, sizeof(input), stdin)) {
+    fprintf(stderr, "Failed to read input\n");
+    return EXIT_FAILURE;
+  }
+  editEntr = atoi(input);
+  if (editEntr < 0 || editEntr > entryCount) {
+    fprintf(stderr, "Invalid index entered.\n");
+    return EXIT_FAILURE;
+  }
+  if (editEntr == 0) {
+    return EXIT_SUCCESS;
+  }
+
+  // Adjust index to match array indexing
+  // *entries = *editEntry(entries, entryCount, editEntr - 1);
+
+  return EXIT_SUCCESS;
 }
