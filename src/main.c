@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
         printf("Index shouldn'c exceed the total entry count!!\nEnter again:");
         scanf("%d", &index);
       }
-      ctx->entries = editEntry(ctx->entries, ctx->entryCount, index);
+      ctx->entries = editEntry(ctx->entries, ctx->entryCount, index - 1);
       break;
     case 4:
       loadEntries(globalContext);
