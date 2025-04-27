@@ -28,6 +28,24 @@ int generateIV(unsigned char **iv) {
 
   return EXIT_SUCCESS;
 }
+
+void generateRandomPassword(char *password, int length) {
+  const char charset[] = "abcdefghijklmnopqrstuvwxyz"
+                         "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                         "0123456789"
+                         "!@#$%^&*()_+[]{}|;:,.<>?";
+  int charsetSize = sizeof(charset) - 1; // Exclude the null terminator
+
+  // Seed the random number generator
+  srand(time(NULL));
+
+  for (int i = 0; i < length; i++) {
+    int key = rand() % charsetSize; // Get a random index
+    password[i] = charset[key];     // Assign a random character
+  }
+  password[length] = '\0'; // Null-terminate the string
+}
+
 unsigned char *hashIt(char *input, unsigned int *digest_len) {
   unsigned char *digest = malloc(DIGEST_SIZE);
   if (!digest) {
