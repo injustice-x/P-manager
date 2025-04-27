@@ -177,88 +177,122 @@ int showVault(passwordManagerContext *globalContext) {
     entry *e = &ctx->entries[i];
     printf("Entry %d:\n", i + 1);
     printf("  Name:     %s\n", e->name);
+    printf("  Website:  %s\n", e->website);
     printf("  Username: %s\n", e->username);
-    printf("  Password: %s\n", e->password);
-    printf("  Website:  %s\n\n", e->website);
+    printf("  Password: %s\n\n", e->password);
   }
 
   return EXIT_SUCCESS;
 }
 
-int editEntry(entry **entries, int entryCount, int index) {
-  if (entries == NULL) {
-    fprintf(stderr, "Error: entries pointer is NULL\n");
-    return -1;
-  }
-  if (index < 0 || index >= entryCount) {
-    fprintf(stderr, "Error: index %d out of bounds\n", index);
-    return -1;
+entry *editEntry(entry *entries, int entryCount, int index) {
+  if (!entries || index < 0 || index >= entryCount) {
+    fprintf(stderr, "Invalid parameters to editEntry\n");
+    return entries;
   }
 
-  entry *e = entries[index];
-  if (e == NULL) {
-    fprintf(stderr, "Error: entry[%d] is NULL\n", index);
-    return -1;
+  // 1) Allocate new array
+  entry *temp = malloc(sizeof(*temp) * entryCount);
+  if (!temp) {
+    perror("malloc");
+    return entries;
   }
 
-  char buffer[MAX_WEBSITE_LEN];
+  // 2) Deep-copy every entry's strings except the one we'll edit
+  for (int i = 0; i < entryCount; i++) {
+    if (i != index) {
+      temp[i].name = strdup(entries[i].name);
+      temp[i].username = strdup(entries[i].username);
+      temp[i].password = strdup(entries[i].password);
+      temp[i].website = strdup(entries[i].website);
+      if (!temp[i].name || !temp[i].username || !temp[i].password ||
+          !temp[i].website) {
+        perror("strdup");
+        // Free any already-allocated strings in temp[0..i]
+        for (int j = 0; j < i; j++) {
+          free(temp[j].name);
+          free(temp[j].username);
+          free(temp[j].password);
+          free(temp[j].website);
+        }
+        free(temp);
+        return entries;
+      }
+    }
+  }
+
+  // 3) Flush leftover newline
   int ch;
-
-  // Flush any leftover newline before the first fgets
   while ((ch = getchar()) != '\n' && ch != EOF) {
   }
 
-  // Prompt for each field, read into the pre‐allocated buffer pointers
-  printf("Enter name [%s]: ", e->name);
-  if (fgets(buffer, MAX_NAME_LEN, stdin)) {
-    buffer[strcspn(buffer, "\r\n")] = '\0';
-    if (buffer[0] != '\0') {
-      strncpy(e->name, buffer, MAX_NAME_LEN - 1);
-      e->name[MAX_NAME_LEN - 1] = '\0';
-    }
-  } else {
-    fprintf(stderr, "Error reading name\n");
-    return -1;
-  }
+  // 4) Prompt & edit only the target entry
+  entry *e = &temp[index];
+  char buf[MAX_WEBSITE_LEN];
 
-  printf("Enter username [%s]: ", e->username);
-  if (fgets(buffer, MAX_USERNAME_LEN, stdin)) {
-    buffer[strcspn(buffer, "\r\n")] = '\0';
-    if (buffer[0] != '\0') {
-      strncpy(e->username, buffer, MAX_USERNAME_LEN - 1);
-      e->username[MAX_USERNAME_LEN - 1] = '\0';
-    }
-  } else {
-    fprintf(stderr, "Error reading username\n");
-    return -1;
-  }
+  // --- Name ---
+  printf("Current name   : %s\n", entries[index].name);
+  printf("Enter new name (ENTER to keep old): ");
+  fflush(stdout);
+  if (!fgets(buf, MAX_NAME_LEN, stdin))
+    goto fail;
+  buf[strcspn(buf, "\r\n")] = '\0';
+  free(e->name);
+  e->name = buf[0] ? strdup(buf) : strdup(entries[index].name);
+  if (!e->name)
+    goto fail;
 
-  printf("Enter password [%s]: ", e->password);
-  if (fgets(buffer, MAX_PASSWORD_LEN, stdin)) {
-    buffer[strcspn(buffer, "\r\n")] = '\0';
-    if (buffer[0] != '\0') {
-      strncpy(e->password, buffer, MAX_PASSWORD_LEN - 1);
-      e->password[MAX_PASSWORD_LEN - 1] = '\0';
-    }
-  } else {
-    fprintf(stderr, "Error reading password\n");
-    return -1;
-  }
+  // --- Website ---
+  printf("Current website : %s\n", entries[index].website);
+  printf("Enter new website (ENTER to keep old): ");
+  fflush(stdout);
+  if (!fgets(buf, MAX_WEBSITE_LEN, stdin))
+    goto fail;
+  buf[strcspn(buf, "\r\n")] = '\0';
+  free(e->website);
+  e->website = buf[0] ? strdup(buf) : strdup(entries[index].website);
+  if (!e->website)
+    goto fail;
 
-  printf("Enter website [%s]: ", e->website);
-  if (fgets(buffer, MAX_WEBSITE_LEN, stdin)) {
-    buffer[strcspn(buffer, "\r\n")] = '\0';
-    if (buffer[0] != '\0') {
-      strncpy(e->website, buffer, MAX_WEBSITE_LEN - 1);
-      e->website[MAX_WEBSITE_LEN - 1] = '\0';
-    }
-  } else {
-    fprintf(stderr, "Error reading website\n");
-    return -1;
-  }
+  // --- Username ---
+  printf("Current username: %s\n", entries[index].username);
+  printf("Enter new username (ENTER to keep old): ");
+  fflush(stdout);
+  if (!fgets(buf, MAX_USERNAME_LEN, stdin))
+    goto fail;
+  buf[strcspn(buf, "\r\n")] = '\0';
+  free(e->username);
+  e->username = buf[0] ? strdup(buf) : strdup(entries[index].username);
+  if (!e->username)
+    goto fail;
 
-  return 0;
+  // --- Password ---
+  printf("Current password: %s\n", entries[index].password);
+  printf("Enter new password (ENTER to keep old): ");
+  fflush(stdout);
+  if (!fgets(buf, MAX_PASSWORD_LEN, stdin))
+    goto fail;
+  buf[strcspn(buf, "\r\n")] = '\0';
+  free(e->password);
+  e->password = buf[0] ? strdup(buf) : strdup(entries[index].password);
+  if (!e->password)
+    goto fail;
+
+  return temp;
+
+fail:
+  fprintf(stderr, "Error editing entry — no changes saved\n");
+  // Free all strings we allocated in temp
+  for (int j = 0; j < entryCount; j++) {
+    free(temp[j].name);
+    free(temp[j].username);
+    free(temp[j].password);
+    free(temp[j].website);
+  }
+  free(temp);
+  return entries;
 }
+
 int searchEntry(entry *entries, int entryCount) {
   char searchTerm[MAX_NAME_LEN];
   int editEntr = 0;
