@@ -107,10 +107,12 @@ int main(int argc, char *argv[]) {
         scanf("%d", &index);
       }
       ctx->entries = editEntry(ctx->entries, ctx->entryCount, index - 1);
+      writeEntries(globalContext);
       break;
     case 4:
       loadEntries(globalContext);
       searchEntry(ctx->entries, ctx->entryCount);
+      writeEntries(globalContext);
       break;
     case 0:
       printf("Exiting...\n");
