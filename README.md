@@ -27,6 +27,7 @@ This C-based password manager provides secure credential storage and retrieval v
    ```bash
    mkdir build
    cd build
+   cmake ..
    make
    ```
 
