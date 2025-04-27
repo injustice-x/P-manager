@@ -101,12 +101,12 @@ int main(int argc, char *argv[]) {
       showVault(globalContext);
       int index;
       printf("Enter the index of the entry you want to edit:");
-      scanf("%d\n", &index);
+      scanf("%d", &index);
       if (index > ctx->entryCount) {
         printf("Index shouldn'c exceed the total entry count!!\nEnter again:");
-        scanf("%d\n", &index);
+        scanf("%d", &index);
       }
-      editEntry(&ctx->entries, ctx->entryCount, index);
+      ctx->entries = editEntry(ctx->entries, ctx->entryCount, index);
       break;
     case 4:
       loadEntries(globalContext);
