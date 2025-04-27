@@ -72,6 +72,13 @@ int addEntry(passwordManagerContext *globalContext) {
   }
   e->name[strcspn(e->name, "\n")] = '\0';
 
+  printf("Enter website: ");
+  if (!fgets(e->website, MAX_WEBSITE_LEN, stdin)) {
+    fprintf(stderr, "Error reading website\n");
+    goto rollback_fields;
+  }
+  e->website[strcspn(e->website, "\n")] = '\0';
+
   printf("Enter username: ");
   if (!fgets(e->username, MAX_USERNAME_LEN, stdin)) {
     fprintf(stderr, "Error reading username\n");
@@ -79,19 +86,30 @@ int addEntry(passwordManagerContext *globalContext) {
   }
   e->username[strcspn(e->username, "\n")] = '\0';
 
-  printf("Enter password: ");
+  printf("Enter password(0 to randomly generate password): ");
   if (!fgets(e->password, MAX_PASSWORD_LEN, stdin)) {
     fprintf(stderr, "Error reading password\n");
     goto rollback_fields;
   }
-  e->password[strcspn(e->password, "\n")] = '\0';
+  e->password[strcspn(e->password, "\r\n")] = '\0';
+  if (strcmp(e->password, "0") == 0) {
+    int pwdLen;
 
-  printf("Enter website: ");
-  if (!fgets(e->website, MAX_WEBSITE_LEN, stdin)) {
-    fprintf(stderr, "Error reading website\n");
-    goto rollback_fields;
+    printf("Random password length: ");
+    fflush(stdout);
+    scanf("%d", &pwdLen);
+    if (pwdLen <= 0 || pwdLen >= MAX_PASSWORD_LEN) {
+      fprintf(stderr, "Invalid length\n");
+    }
+
+    e->password = malloc(pwdLen + 1);
+    if (!e->password) {
+      perror("malloc");
+    }
+    generateRandomPassword(e->password, pwdLen);
+  } else {
+    e->password[strcspn(e->password, "\n")] = '\0';
   }
-  e->website[strcspn(e->website, "\n")] = '\0';
 
   // 4) Serialize to JSON
   crypto->plaintext = NULL;
@@ -268,13 +286,44 @@ entry *editEntry(entry *entries, int entryCount, int index) {
 
   // --- Password ---
   printf("Current password: %s\n", entries[index].password);
-  printf("Enter new password (ENTER to keep old): ");
+  printf("Enter new password (ENTER to keep old)(0 to generate random "
+         "password) : ");
   fflush(stdout);
+
   if (!fgets(buf, MAX_PASSWORD_LEN, stdin))
     goto fail;
   buf[strcspn(buf, "\r\n")] = '\0';
   free(e->password);
-  e->password = buf[0] ? strdup(buf) : strdup(entries[index].password);
+
+  if (buf[0] == '\0') {
+    e->password = strdup(entries[index].password);
+  } else if (strcmp(buf, "0") == 0) {
+    char lenBuf[16];
+    int pwdLen;
+
+    printf("Random password length: ");
+    fflush(stdout);
+
+    if (!fgets(lenBuf, sizeof lenBuf, stdin))
+      goto fail;
+    pwdLen = atoi(lenBuf);
+
+    if (pwdLen <= 0 || pwdLen >= MAX_PASSWORD_LEN) {
+      fprintf(stderr, "Invalid length\n");
+      goto fail;
+    }
+
+    e->password = malloc(pwdLen + 1);
+    if (!e->password) {
+      perror("malloc");
+      goto fail;
+    }
+    generateRandomPassword(e->password, pwdLen);
+  } else {
+    // Use their custom password
+    e->password = strdup(buf);
+  }
+
   if (!e->password)
     goto fail;
 
@@ -295,7 +344,6 @@ fail:
 
 int searchEntry(entry *entries, int entryCount) {
   char searchTerm[MAX_NAME_LEN];
-  int editEntr = 0;
 
   printf("Enter the term to search vault: ");
   if (!fgets(searchTerm, sizeof(searchTerm), stdin)) {
@@ -328,25 +376,6 @@ int searchEntry(entry *entries, int entryCount) {
     printf("No matching entries found.\n");
     return EXIT_SUCCESS;
   }
-
-  printf(
-      "To edit an entry, please enter its index number (0 to exit search): ");
-  char input[10];
-  if (!fgets(input, sizeof(input), stdin)) {
-    fprintf(stderr, "Failed to read input\n");
-    return EXIT_FAILURE;
-  }
-  editEntr = atoi(input);
-  if (editEntr < 0 || editEntr > entryCount) {
-    fprintf(stderr, "Invalid index entered.\n");
-    return EXIT_FAILURE;
-  }
-  if (editEntr == 0) {
-    return EXIT_SUCCESS;
-  }
-
-  // Adjust index to match array indexing
-  // *entries = *editEntry(entries, entryCount, editEntr - 1);
 
   return EXIT_SUCCESS;
 }
