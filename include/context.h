@@ -53,6 +53,7 @@ extern user *currentUser;
 /*main functions*/
 passwordManagerContext *initPasswordManagerContext(const char *dataFilePath);
 int loadEntries(passwordManagerContext *globalContext);
+int writeEntries(passwordManagerContext *globalContext);
 int getUser(passwordManagerContext *globalContext);
 int addUser(passwordManagerContext *globalContext);
 int addEntry(passwordManagerContext *globalContext);
@@ -69,6 +70,7 @@ void freeGlobalContext(passwordManagerContext *globalContext);
 
 /*helper functions*/
 int generateIV(unsigned char **iv);
+void generateRandomPassword(char *password, int length);
 unsigned char *hashIt(char *input, unsigned int *digest_len);
 int writeData(const char *filePath, hashes *hash, int entryCount,
               unsigned char *iv, unsigned char *cipherText,
