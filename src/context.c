@@ -86,6 +86,37 @@ int loadEntries(passwordManagerContext *globalContext) {
   return EXIT_SUCCESS;
 }
 
+int writeEntries(passwordManagerContext *globalContext) {
+  userContext *ctx = globalContext->currentUser->currentContext;
+  cryptoContext *crypto = ctx->crypto;
+
+  crypto->plaintext = NULL;
+  unsigned char *json = (unsigned char *)jsonEntries(
+      ctx->entries, globalContext->username, ctx->entryCount);
+  if (!json) {
+    fprintf(stderr, "JSON serialization failed\n");
+  }
+  crypto->plaintext = json;
+  *crypto->plaintext_len = strlen((char *)json);
+
+  // 5) Encrypt and zero plaintext
+  if (encryptData(crypto->plaintext, crypto->plaintext_len,
+                  crypto->encryptionKey, &crypto->iv, &crypto->ciphertext,
+                  &crypto->ciphertext_len) != EXIT_SUCCESS) {
+    fprintf(stderr, "Encryption failed\n");
+  }
+  explicit_bzero(crypto->plaintext, *crypto->plaintext_len);
+
+  // 6) Write out
+  if (writeData(globalContext->filePath, globalContext->currentUser->hash,
+                ctx->entryCount, crypto->iv, crypto->ciphertext,
+                &crypto->ciphertext_len) != EXIT_SUCCESS) {
+    fprintf(stderr, "Write failed\n");
+    free(crypto->ciphertext);
+  }
+  return EXIT_SUCCESS;
+}
+
 void freeGlobalContext(passwordManagerContext *globalContext) {
   if (globalContext == NULL)
     return;
